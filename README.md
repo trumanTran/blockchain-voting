@@ -1,3 +1,3 @@
 # blockchain-voting
-Project for capstone course
-Students: Trungnt, Aaron, Steve, Jesse, and John
+<p>Project for capstone course</p>
+<p>Students: Trungnt, Aaron, Steve, Jesse, and John</p>
