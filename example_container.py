@@ -51,7 +51,12 @@ class Vote:
                 #Now print out the entire list stored in each position.
                 print(self.__VoteBlock[i][j])
 
-
+    def alt_retrieve(self, race, position):
+        return self.__VoteBlock[race+1][position+1]
+        #Retrieves the actual thing, which is +1 because of the appended extra data.
+    
+    def alt_get_race(self, pos):
+        return self.__VoteBlock[pos][0]
 
 # Some test functions here
 SomeBallot = Vote()
@@ -89,3 +94,33 @@ def insert_to_block():
 SomeBallot.insert_votes(insert_to_block())
 '''Copy crap as an entire list of list of lists and store it in the object. Now we can pass it.
 To actually get the values back for the race type and the positions in each race, you have to consult a completely separate list or list of lists.'''
+
+
+'''Alternate method: store position 0 as the 'type' identifier (so [0] returns the race, [X][0] returns the position for that race, etc.
+This takes less overall space as we are not repeating the same thing over each line
+A more contemporary approach requires [race, position, name] type format for each entry.
+We could use 'tuples' to mix-match our data, since it is immutable and after voting you don't want the votes changing.
+This means that it will be a list of lists of tuples, which will not be changeable after insertion.
+'''
+AltBallot = Vote() #Create a new class object.
+AltPoliData = []
+# We have to push in stuff manually using append.
+def alt_insert_block():
+    '''The way this is going to happen is we have to insert the beginning identifier tag in position zero of each of their respective lists.
+    This can be done via tuples or generic list attributes.'''
+    AltRace = [] #Empty container for now.
+    for i in range (0, len(PoliRace)):
+        AltPos = []
+        #Now we must insert the thing into the container just made.
+        AltPos.append(PoliRace[i])
+        for j in range (0, len(Positions[i])):
+            AltChoices = []
+            AltChoices.append(Positions[i][j])
+            #Now fill in the relevant sections one chunk at a time.
+            for k in range (0, len(VoterPicks[i][j][k])):
+                AltChoices.append(VoterPicks[i][j][k])
+            AltPos.append((list(AltChoices), AltChoices[0]))
+            #Now continue appending.
+        AltRace.append((list(AltPos), AltPos[0]))
+    #Everything appended. Now return the value of the appended block.
+    return AltRace
