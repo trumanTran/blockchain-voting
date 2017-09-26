@@ -29,7 +29,7 @@ def checkInfo(event):
         aI.delete(0, END)
         raise_frame(f2)
     else:
-        tkinter.messagebox.showinfo("INVALID", "Your username or password were incorrect")
+        tkinter.messagebox.showinfo("INVALID", "Your name or address are invalid")
         print("not valid")
 
 #confirm quitting the app
