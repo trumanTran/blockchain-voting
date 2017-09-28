@@ -190,7 +190,7 @@ label.grid(sticky = 'news')
 
 #function to reset all parameters and start the voting booth from the beginning
 def reset():
-    vote.set(0)
+    president.set(0)
     Chicken.set(0)
     Beef.set(0)
     Pork.set(0)
