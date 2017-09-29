@@ -75,6 +75,7 @@ for i in range(0, len(input)):
             next.pack()
         counter += 1
 
+raise_frame(frame1)
 
 #get info from entries
 def checkInfo():
