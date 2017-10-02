@@ -69,10 +69,33 @@ for i in range(0, len(input)):
         header = Label(subFrame, text = read[0])
         set_as_top_text(header)
         header.pack()
-        if i > 1:
-            next = Button(subFrame, text = "CONTINUE", command = nextFrame1)
-            set_as_body_text(next)
-            next.pack()
+
+        directions = Label(subFrame, text = read[1] + read[2])
+        set_as_body_text(directions)
+        directions.pack()
+
+        read[3] = read[3].strip()
+        candidates = read[3].split(', ')
+
+        candidateFrame = Frame(subFrame)
+        candidateFrame.pack()
+
+        if(read[1] == ' Pick only' and read[2][1] == '1'):
+            var = IntVar()
+            for q in range (0, len(candidates)):
+                rb = Radiobutton(candidateFrame, text = candidates[q], variable = var, value = q+1)
+                set_as_body_text(rb)
+                rb.grid(sticky = W)
+        else:
+            for q in range (0, len(candidates)):
+                temp = IntVar()
+                cb = Checkbutton(candidateFrame, text = candidates[q], variable = temp)
+                set_as_body_text(cb)
+                cb.grid(sticky = W)
+
+        next = Button(subFrame, text = "CONTINUE", command = nextFrame1)
+        set_as_body_text(next)
+        next.pack()
         counter += 1
 
 raise_frame(frame1)
@@ -93,6 +116,9 @@ def quitCheck():
     answer = tkinter.messagebox.askquestion("YOU ARE ABOUT TO QUIT", "Are you sure you'd like to quit?")
     if answer == 'yes':
         root.quit()
+
+    def reset():
+        raise_frame(frame1)
 
 #frame 1
 frame1_subFrame = Frame(frame1)
@@ -133,7 +159,7 @@ lastframe_SubFrame = Frame(lastframe)
 lastframe_SubFrame.grid(column = 1, row = 1)
 thanks = Label(lastframe_SubFrame, text = "THANK YOU FOR VOTING")
 set_as_top_text(thanks)
-end = Button(lastframe_SubFrame, text = "FINISH", command = root.quit)
+end = Button(lastframe_SubFrame, text = "FINISH", command = reset)
 set_as_body_text(end)
 thanks.pack()
 end.pack()
