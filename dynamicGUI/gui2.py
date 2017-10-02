@@ -117,8 +117,8 @@ def quitCheck():
     if answer == 'yes':
         root.quit()
 
-    def reset():
-        raise_frame(frame1)
+ def reset():
+    raise_frame(frame1)
 
 #frame 1
 frame1_subFrame = Frame(frame1)
