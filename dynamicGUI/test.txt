@@ -1,5 +1,5 @@
 district: 1
 races: 3
 Race 1: Pick only: 1 of 3: Justin Beiber, Michael Jackson, Prince
-Race 2: Pick only: 2 of 5: Good Professor, Good Class, Easy Grader, Easy Workload, Ideal Start Time
+Race 2: Pick upto: 2 of 5: Good Professor, Good Class, Easy Grader, Easy Workload, Ideal Start Time
 Race 3: Pick upto: 4 of 4: Pork, Beef, Chicken, Lamb
