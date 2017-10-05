@@ -24,16 +24,26 @@ root = Tk()
 root.attributes("-fullscreen", True)
 root.title("Voting Booth")
 
-#keep track of new frames
+#values to keep track of new frames and votes
 races = []
 counter = 1
-a = 2
+frameCount = 2 #keep track of frames
+ballotTypes = [] #if one candidate is expected or multiple
+limitations = [] #list how many candidates are
+votes = [] #list of lists of votes
 
 def nextFrame1():
-    global a
-    raise_frame(races[a])
-    a += 1
-    return a
+    global frameCount
+    #check if somebody voted in a one candidate race
+    if(ballotTypes[frameCount-2] == 0):
+        if votes[frameCount - 2][0].get()==0:
+            print ("bad Vote")
+        else:
+            raise_frame(races[frameCount])
+    else:
+        raise_frame(races[frameCount])
+    frameCount+= 1
+    return frameCount
 
 def configure(frame):
     for x in range(0, 3):
@@ -64,12 +74,16 @@ for i in range(0, len(input)):
             frame.place(relx=0.5, rely=0.5, anchor="c", relwidth=1.0, relheight=1.0)  # add new frame to the window
             races.insert (1, frame)
     elif i > 1:
+        #create a frame to place in the center of the window
         subFrame = Frame(races[counter])
         subFrame.grid(row = 1, column = 1)
+
+        #state the race
         header = Label(subFrame, text = read[0])
         set_as_top_text(header)
         header.pack()
 
+        #give direction regarding the race
         directions = Label(subFrame, text = read[1] + read[2])
         set_as_body_text(directions)
         directions.pack()
@@ -80,18 +94,25 @@ for i in range(0, len(input)):
         candidateFrame = Frame(subFrame)
         candidateFrame.pack()
 
-        if(read[1] == ' Pick only' and read[2][1] == '1'):
+        if(read[1] == ' Pick only'):
             var = IntVar()
+            oneCandidateList = [var]
+            votes.append(oneCandidateList)
             for q in range (0, len(candidates)):
-                rb = Radiobutton(candidateFrame, text = candidates[q], variable = var, value = q+1)
+                rb = Radiobutton(candidateFrame, text = candidates[q], variable = votes[i-2][0], value = q+1)
                 set_as_body_text(rb)
                 rb.grid(sticky = W)
+            ballotTypes.append(0)
         else:
+            candidateValues = []
             for q in range (0, len(candidates)):
                 temp = IntVar()
-                cb = Checkbutton(candidateFrame, text = candidates[q], variable = temp)
+                candidateValues.append(temp)
+                cb = Checkbutton(candidateFrame, text = candidates[q], variable = candidateValues[q])
                 set_as_body_text(cb)
                 cb.grid(sticky = W)
+            ballotTypes.append(1)
+            votes.append(candidateValues)
 
         next = Button(subFrame, text = "CONTINUE", command = nextFrame1)
         set_as_body_text(next)
@@ -117,8 +138,22 @@ def quitCheck():
     if answer == 'yes':
         root.quit()
 
- def reset():
+def reset():
+    global frameCount
+    frameCount=2
     raise_frame(frame1)
+
+    for k in range (0, len(votes)):
+        for j in range (0, len(votes[k])):
+            print(votes[k][j].get()) #print ballots on terminal
+            votes[k][j].set(0) #reset all buttons to false/unchecked
+        print ("_____________") #separator for the ballots while printing
+
+    #reset text entry fields
+    nameInfo.delete(0, END)
+    addressInfo.delete(0, END)
+
+    return frameCount
 
 #frame 1
 frame1_subFrame = Frame(frame1)
