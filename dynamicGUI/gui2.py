@@ -188,7 +188,19 @@ def reset(event):
     for k in range (0, len(votes)):
         print("Race", k+1, ": ", end = "")
         for j in range (0, len(votes[k])):
-            print(votes[k][j].get(),end = "") #print ballots on terminal
+            if(ballotTypes[k]==0):
+                if(votes[k][j].get() == WriteInCandidates[k][1]): #if a one candidate ballot write in
+                    print(WriteInCandidates[k][0].get(),end = "")
+                else:
+                    print(votes[k][j].get(), " ", end="")
+            elif(j==WriteInCandidates[k][1]-1): #if while checking a multiple candidate ballot and if checking the last option of a write in
+                if(ballotTypes[k]==1):
+                    if(votes[k][j].get()==1):
+                        print(WriteInCandidates[k][0].get(), end = "")
+                    else: 
+                        print(0,end = "")
+            else: #if checking  multiple candidate ballot and not yet checked the last option of a write in
+                print(votes[k][j].get(), " ",end = "") #print ballots on terminal
             votes[k][j].set(0) #reset all buttons to false/unchecked
         print ("") #separator for the ballots while printing
 
