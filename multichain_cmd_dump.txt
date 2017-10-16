@@ -1,0 +1,108 @@
+Microsoft Windows [Version 6.1.7601]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+B:\multichain-windows-1.0.1>multichain-cli chain1 grant 17bFesFHVuaHCUTUjfRsPipW
+CnDrP4D2T7BgX3 connect
+{"method":"grant","params":["17bFesFHVuaHCUTUjfRsPipWCnDrP4D2T7BgX3","connect"],
+"id":1,"chain_name":"chain1"}
+
+4a5ee323aeaf9e4cfe86b312853f421598edb4b286197f542c0e2f8487268fd7
+
+B:\multichain-windows-1.0.1>multichain-cli chain1 getinfo
+{"method":"getinfo","params":[],"id":1,"chain_name":"chain1"}
+
+{
+    "version" : "1.0.1",
+    "nodeversion" : 10001901,
+    "protocolversion" : 10009,
+    "chainname" : "chain1",
+    "description" : "MultiChain chain1",
+    "protocol" : "multichain",
+    "port" : 9735,
+    "setupblocks" : 60,
+    "nodeaddress" : "chain1@10.204.0.178:9735",
+    "burnaddress" : "1XXXXXXXTJXXXXXXnJXXXXXXWqXXXXXXUJp3bo",
+    "incomingpaused" : false,
+    "miningpaused" : false,
+    "walletversion" : 60000,
+    "balance" : 0.00000000,
+    "walletdbversion" : 2,
+    "reindex" : false,
+    "blocks" : 13,
+    "timeoffset" : 0,
+    "connections" : 1,
+    "proxy" : "",
+    "difficulty" : 0.00000006,
+    "testnet" : false,
+    "keypoololdest" : 1508174065,
+    "keypoolsize" : 2,
+    "paytxfee" : 0.00000000,
+    "relayfee" : 0.00000000,
+    "errors" : ""
+}
+
+B:\multichain-windows-1.0.1>multichain-cli chain1 listpermissions issue
+{"method":"listpermissions","params":["issue"],"id":1,"chain_name":"chain1"}
+
+[
+    {
+        "address" : "1MhKKnDhqsaUqS8tbUEK3B7vV2ANvuumEfFdZ",
+        "for" : null,
+        "type" : "issue",
+        "startblock" : 0,
+        "endblock" : 4294967295
+    }
+]
+
+B:\multichain-windows-1.0.1>multichain-cli chain1 issue asset1 1000 0.01
+{"method":"issue","params":["asset1","1000",0.01000000],"id":1,"chain_name":"cha
+in1"}
+
+error code: -5
+error message:
+Invalid address
+
+B:\multichain-windows-1.0.1>multichain-cli chain1 1MhKKnDhqsaUqS8tbUEK3B7vV2ANvu
+umEfFdZ issue asset1 1000 0.01
+{"method":"1MhKKnDhqsaUqS8tbUEK3B7vV2ANvuumEfFdZ","params":["issue","asset1","10
+00","0.01"],"id":1,"chain_name":"chain1"}
+
+error code: -32601
+error message:
+Method not found
+
+B:\multichain-windows-1.0.1>multichain-cli chain1@1MhKKnDhqsaUqS8tbUEK3B7vV2ANvu
+umEfFdZ issue asset1 1000 0.01
+{"method":"issue","params":["asset1","1000",0.01000000],"id":1,"chain_name":"cha
+in1"}
+
+error code: -5
+error message:
+Invalid address
+
+B:\multichain-windows-1.0.1>listassets
+'listassets' is not recognized as an internal or external command,
+operable program or batch file.
+
+B:\multichain-windows-1.0.1>multichain-cli chain1 listassets
+{"method":"listassets","params":[],"id":1,"chain_name":"chain1"}
+
+[
+]
+
+B:\multichain-windows-1.0.1>multichain-cli chain1 issue asset1 1000 0.01
+{"method":"issue","params":["asset1","1000",0.01000000],"id":1,"chain_name":"cha
+in1"}
+
+error code: -5
+error message:
+Invalid address
+
+B:\multichain-windows-1.0.1>multichain-cli chain1 issue 1MhKKnDhqsaUqS8tbUEK3B7v
+V2ANvuumEfFdZ asset1 1000 0.01
+{"method":"issue","params":["1MhKKnDhqsaUqS8tbUEK3B7vV2ANvuumEfFdZ","asset1",100
+0,0.01000000],"id":1,"chain_name":"chain1"}
+
+5414165c45c1be2c78f1b943ce23e33101e06354f8b12f721dd71b9d5fec6b5c
+
+###The above is just a way for me to keep track of how they organize crap.
