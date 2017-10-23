@@ -15,7 +15,7 @@ buffer = ""
 def create_table(table_name, arg_count, arg_values):
     '''Takes a table name, a number of arguments count, and argument values.
     Argument values are used for the individual table columns.'''
-
+    #TODO: SANITIZE INPUTS.
     #Create the table.
     arg_string = " ("
     for i in range (0, arg_count):
@@ -46,3 +46,4 @@ def insert_entries(table_name, table_col_count, col_values):
             #Reject input.
             return
     cur.executemany(script_char, col_values)
+    con.commit()
