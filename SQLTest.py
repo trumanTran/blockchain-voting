@@ -71,6 +71,7 @@ def hit_entry(table_name, num_args, target_col, hit_col):
 		#Keep adding arguments. We're processing everything as a singular block.
 		
 	cur.executemany('SELECT * FROM ' + table_name + ' WHERE ' )
+	'''not finished.'''
 	
 def create_voter_reg():
 	#Runs the table creation with preset values already determined.
@@ -94,9 +95,9 @@ def check_voter(table_name, target_name, target_address):
 		#Pass an argument that sets the bool column to true, and also confirm the voter can vote.
 		'''Insert vote message passing thing here.'''
 		cur.execute(something) #Execute bool change.
-	elif(bool_val == '0')
+	elif(bool_val == '0'):
 		#We got a wrong hit.
 		'''Insert already voted message.'''
-	else()
+	else():
 		#No hits on list, suspicious...
 		'''Insert not registered voter message.'''
