@@ -30,7 +30,7 @@ class Vote:
 
     def get_zip(self):
         return self.__ZipCode
-
+'''
     def get_data_pos(self, race, position): #Function that 'gets' the voter stuff at the specified race and position set.
         #Again, not real helpful by itself, but this is just a proof of concept. It returns a 'section' of the specified race and position (a list).
         return self.__VoteBlock[race][position]
@@ -50,14 +50,55 @@ class Vote:
             for j in range (0, len(self.__VoteBlock[i])):
                 #Now print out the entire list stored in each position.
                 print(self.__VoteBlock[i][j])
-
+    #Functions beyond this point are for the 'secondary' method, where the info is the header for their relevant sections.
+'''
     def alt_retrieve(self, race, position):
         return self.__VoteBlock[race+1][position+1]
         #Retrieves the actual thing, which is +1 because of the appended extra data.
-    
+
     def alt_get_race(self, pos):
         return self.__VoteBlock[pos][0]
-
+	
+	def alt_search_votes(self, name):
+		#Combs data for hit just like above, ignores 'initial' position tag which is reserved for the race being participated in/the position.
+		for i in range (0, len(self.__VoteBlock)):
+			for j in range (1, len(self.__VoteBlock[i])):
+				if(self.__VoteBlock[i][j] == name):
+					return True #Got a hit on the list of lists.
+		#No hits found.
+		return False
+	
+	def alt_print_votes(self):
+        #Prints out everything in order, according to following formula - [Race/Position - People (seperated by commas)].
+        #Each race and position is seperated by a new line. DESIGNED FOR THINGS OTHER THAN TUPLES.
+		for i in range (0, len(self.__VoteBlock)):
+            print(__VoteBlock[i][0] + " - ")
+            for j in range (0, len(self.__VoteBlock[i])):
+                if (j < len(self.__VoteBlock[i])):
+					print (__VoteBlock[i][j] + ", ")
+				elif (j == len(self.__VoteBlock[i])):
+					print (__VoteBlock[i][j] + "." + "/n")
+                #Should give rows that look like [Race, Position] - [Names] in rows per race/position pairing.
+	
+	def alt_print_tuple_votes(self):
+		#Prints out everything in order, according to following formula - [Race/Position - People (seperated by commas)].
+		#Each race and position is seperated by a new line.
+		identitag = None
+		for i in range (0, len(self.__VoteBlock)):
+			if(identitag != __VoteBlock[i][0][0]):
+				#The third 0 is actually for the in-built tuple INSIDE the container, so a third 0 is needed to specify which part of the tuple we want.
+				identitag = __VoteBlock[i][0][0]
+				print (identitag + "/n")
+			print (__VoteBlock[i][0][1] + " - ") #Prints the 'position' of the race. Since each position changes, there's no need for the identitag like above.
+			for j in range (1, len(self.__VoteBlock[i])):
+				#Since values for the race and position are stored as tuples, we do this the following way:
+				#Print the first tuple object (the race) and keep going until the tuple object changes in some way. We need a value to host this.
+				#This would be so much easier with a list of lists of lists, but whatever.
+				if (j < len(self.__VoteBlock[i])):
+					print (__VoteBlock[i][j] + ", ")
+				elif (j == len(self.__VoteBlock[i])):
+					print (__VoteBlock[i][j] + "." + "/n")
+					
 # Some test functions here
 SomeBallot = Vote()
 # Created a new ballot. Now, pass some random stuff to it.
@@ -91,10 +132,6 @@ def insert_to_block():
         PolPos.clear()  #Clean up the list of lists after making a copy. Explicit call.
     return PolRace  #Return the stored values as a list of list of lists.
 
-SomeBallot.insert_votes(insert_to_block())
-'''Copy crap as an entire list of list of lists and store it in the object. Now we can pass it.
-To actually get the values back for the race type and the positions in each race, you have to consult a completely separate list or list of lists.'''
-
 '''Alternate method: store position 0 as the 'type' identifier (so [0] returns the race and position.
 This takes less overall space as we are not repeating the same thing over each line
 Format is [Race, Position][Persons].
@@ -119,3 +156,7 @@ def alt_insert_block():
             #Now continue appending.
     #Everything appended. Now return the value of the appended block.
     return AltRace
+
+SomeBallot.insert_votes(alt_insert_block())
+'''Copy crap as an entire list of list of lists and store it in the object. Now we can pass it.
+To actually get the values back for the race type and the positions in each race, you have to consult a completely separate list or list of lists.'''
