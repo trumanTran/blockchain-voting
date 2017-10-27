@@ -15,7 +15,7 @@ class Block:
     # Will replace this function once we know how to create digital signature with machine private key
     def hash_block(self):
         sha = hasher.sha256()
-        sha.update(str(self.index) + str(self.timestamp) + str(self.data) + str(self.previous_hash))
+        sha.update((str(self.machine_id) + str(self.timestamp) + str(self.data) + str(self.previous_hash)).encode("utf-8"))
         return sha.hexdigest()
 
 
@@ -40,9 +40,19 @@ def next_block(current_id, current_data, last_block):
 blockchain = [create_genesis_block()]
 previous_block = blockchain[0]
 
-
 # Add blocks to the chain
+
+proposing_id = 1
+proposed_data = [("banana", "queso"), ("red", "rojo"), ("school", "escuela")]
 
 block_to_add = next_block(proposing_id, proposed_data, previous_block)
 blockchain.append(block_to_add)
 previous_block = block_to_add
+
+print(blockchain[0].machine_id)
+print(blockchain[0].hash)
+print(blockchain[0].data)
+print(blockchain[1].machine_id)
+print(blockchain[1].data)
+print(blockchain[1].hash)
+print(blockchain[1].previous_hash)
