@@ -30,13 +30,13 @@ def create_table(table_name, arg_count, arg_values):
     con.commit() #Commit changes
     #Now that we made the table and added the columns, we have to have functions to do other things like insert values.
 
+#We insert values in an entire block for a chosen table. Insert it as name of table,  a numerical length of list, and the list itself.
+#Insert values as a list of tuples. MUST BE A LIST OF TUPLES FOR MULTIPLE INSERTION. A format example is included.
+'''Example Insertion - Boolean values 
+Voters = [('Dlanod Pmurt', '527 th5 euneva', 'No'),
+('Yrallih Notnilc', 'placesome', 'Yes'),
+('Geedubya', 'Lonestar', 'No')]'''
 def insert_entries(table_name, table_col_count, col_values):
-    #We insert values in an entire block for a chosen table. Insert it as name of table,  a numerical length of list, and the list itself.
-    #Insert values as a list. A format example is included.
-	'''Example Insertion - Boolean values 
-		Voters = [('Dlanod Pmurt', '527 th5 euneva', 'No'),
-             ('Yrallih Notnilc', 'placesome', 'Yes'),
-             ('Geedubya', 'Lonestar', 'No')]'''
     script_char = 'INSERT INTO ' + table_name + ' VALUES ('
     # We have to use ? and other methods to sanitize inputs. There is an else clause to reject the input.
     for i in range (table_col_count):
@@ -46,58 +46,67 @@ def insert_entries(table_name, table_col_count, col_values):
             script_char += '?)'
         else:
             #Print error message.
-            print "Bad Input. Rejecting..."
+            print ("Bad Input. Rejecting...")
             #Reject input.
             return
     cur.executemany(script_char, col_values)
 con.commit()
 
 def insert_entry(table_name, table_col_count, col_values):
-	#Function to insert a singular row into the table. ONLY INSERTS ONE ROW.
-	#Initial sanitation of input. Designed to minimize chance of SQL injection.
-	entry = (col_values,)
-	#Insert the things into the table
-	cur.execute('SELECT * FROM ' + table_name + ' WHERE symbol=?', entry)
-	#now we have to finalize crap. Print out something to make sure it worked.
-	print cur.fetchone()
-	con.commit() #Commit changes
+    """Function to insert a singular row into the table. ONLY INSERTS ONE ROW.
+    table_col_count is the number of values we're inserting. Make sure it's a set of tuples.
+    col_values holds the actual values to be inserted, as a tuple, or for multiple entries, a list of tuples.
+    execute only takes char arguments or direct values. Do not use STRINGS in this insertion. USE TUPLES.
+    I have very little idea why strings cannot be used directly, but apparently tuples are the way to go.
+	Initial sanitation of input. Designed to minimize chance of SQL injection."""
+    entry = 'INSERT INTO ' + table_name + ' VALUES (?' #We take the entire command and push it through as one SQL request.
+    #Insert the things into the table.
+    for i in range (1, table_col_count):
+        entry += ',?'
+        #We shove extra 'entries' equal to table_col_count - 1.
+    entry += ')'
+    #Close entry's argument string.
+    cur.executemany(entry, col_values)
+    #now we have to finalize crap. Print out something to make sure it worked.
+    print(cur.fetchone())
+    con.commit() #Commit changes.
 	
 def hit_entry(table_name, num_args, target_col, hit_col):
-	'''Check for a hit on the table for the specified columns. If it confirms a hit, confirm all specified columns for hit on that row.
+    '''Check for a hit on the table for the specified columns. If it confirms a hit, confirm all specified columns for hit on that row.
 	If there is any discrepency, let the sqlite wrapper handle it. We must check for every argument. num_args covers how many arguments are made.
 	target_col specifies the targeted column for the argument (is a list). hit_col specifies the thing we want to check against the table's specified column.'''
-	arg_spam = None
-	for i in range (0, num_args):
-		#Keep adding arguments. We're processing everything as a singular block.
-		
+    arg_spam = None
+    for i in range (0, num_args):
+        #Keep adding arguments. We're processing everything as a singular block.
 	cur.executemany('SELECT * FROM ' + table_name + ' WHERE ' )
-	'''not finished.'''
 	
 def create_voter_reg():
-	#Runs the table creation with preset values already determined.
-	table_args = ['name', 'address', 'hasvoted BOOLEAN NOT NULL'] #Arguments.
-	create_table('voter_reg', 3, table_args) #Create the table.
+    #Runs the table creation with preset values already determined.
+        table_args = ['name', 'address', 'hasvoted BOOLEAN NOT NULL CHECK (hasvoted IN (0,1)'] #Arguments.
+        create_table('voter_reg', 3, table_args) #Create the table.
+        con.commit()
 	
 def insert_voter(voter_name, voter_add):
-	#Insert a new voter, with the last bool value being set to 'false'.
-	insert_entry('voter_reg', voter_name, voter_add, 'false')
-	#Each voter must be inserted manually, but there will be a bulk insertion method avaliable later when this is refined.
+    #Insert a new voter, with the last bool value being set to 'false'.
+    insert_entry('voter_reg', 3, (voter_name, voter_add, 'false'))
+    #Each voter must be inserted manually, but there will be a bulk insertion method avaliable later when this is refined.
+    con.commit()
 	
 def check_voter(table_name, target_name, target_address):
-	'''Simplified version of hit_entry that has predefined arguments.
+    """Simplified version of hit_entry that has predefined arguments.
 	It will form a query that checks for a bool from two conditionals. If true, it will then do a check for validity (the 'voted' bool value).
 	If the bool value is false, the voter did not vote yet, and it is set to true, and a 'true' (1) bool is returned.
-	Else, the bool value is false (0). False is a rejection of voter, keep this in mind. Everything is case sensitive.'''
-	arg_list = 'IF EXISTS ( SELECT 1 FROM ' + table_name + ' WHERE name=' + target_name + ' AND address=' + target_address + ' ) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END'
-	#Cast as bit is used here to represent 'true' and 'false'.
-	bool_val = cur.executemany(arg_list)
-	if(bool_val == '1'): #Assuming a successful find...
-		#Pass an argument that sets the bool column to true, and also confirm the voter can vote.
-		'''Insert vote message passing thing here.'''
-		cur.execute(something) #Execute bool change.
-	elif(bool_val == '0'):
-		#We got a wrong hit.
-		'''Insert already voted message.'''
-	else():
+	Else, the bool value is false (0). False is a rejection of voter, keep this in mind. Everything is case sensitive."""
+    arg_list = 'IF EXISTS ( SELECT 1 FROM ' + table_name + ' WHERE name=' + target_name + ' AND address=' + target_address + ' ) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END'
+    #Cast as bit is used here to represent 'true' and 'false'.
+    bool_val = cur.executemany(arg_list)
+    if(bool_val == '1'): #Assuming a successful find...
+	    #Pass an argument that sets the bool column to true, and also confirm the voter can vote.
+	    '''Insert vote message passing thing here.'''
+	    cur.execute('UPDATE voter_reg SET hasvoted = 1 WHERE name=' + target_name + ' AND address=' + target_address) #Execute bool change.
+    elif(bool_val == '0'):
+        #We got a wrong hit.
+	    '''Insert already voted message.'''
+    else:
 		#No hits on list, suspicious...
 		'''Insert not registered voter message.'''
