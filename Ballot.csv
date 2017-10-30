@@ -1,7 +1,5 @@
-President,Senate,House,Mayor,Comptroller
-Dracula [R],Robotic Jill Stein [R],Wolfman [R],Mao Zedong [R],Old People [R]
-Van Helsing [D],Adolf Lincoln [R],Frankenstein’s Monster [R],Eric Schweitzer [D],Sparrows [R]
-Bill Clontron [I],Tom Cruise’s Acting Career[D],Dracula [R],,Young People [D]
-,Mummy [D],Cthulu [D],,Farmers [D]
-,,Flying Spaghetti Monster [D],,
-,,Courage (The Cowardly Dog) [D],,
+President,1,Dracula [R],Van Helsing [D],Bill Clontron [I],,,
+Senate,2,Robotic Jill Stein [R],Adolf Lincoln [R],Tom Cruise’s Acting Career[D],Mummy [D],,
+House,2,Wolfman [R],Frankenstein’s Monster [R],Dracula [R],Cthulu [D],Flying Spaghetti Monster [D],Courage (The Cowardly Dog) [D]
+Mayor,1,Mao Zedong [R],Eric Schweitzer [D],,,,
+Comptroller,1,Old People [R],Sparrows [R],Young People [D],Farmers [D],,
