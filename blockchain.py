@@ -35,6 +35,15 @@ def next_block(current_id, current_data, last_block):
     this_hash = last_block.hash
     return Block(this_id, this_timestamp, this_data, this_hash)
 
+# Open sample ballot txt file to parse and create list of races in order to create blockchain for each race
+races = []
+raceFile = open('test.txt','r')
+lines = fhand.readlines()[2:]
+raceFile.close
+for line in lines:
+    line = line.rstrip()
+    words = line.split(':')
+    races.append(words[0])
 
 # Create the blockchain and add the genesis block
 blockchain = [create_genesis_block()]
