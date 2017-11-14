@@ -41,5 +41,5 @@ def find_node_ips():
 	cur.execute('SELECT ip_add FROM key_table')
 	return cur.fetchall()
   
-  """Table Creation"""
-  create_key_table()
+"""Table Creation"""
+create_key_table()
