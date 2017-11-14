@@ -33,45 +33,64 @@ def socket_bind():
 		global host
 		global port
 		global server
+		
 		print("Binding socket to port: " + str(port))
 		server.bind((host, port))
+		
 		server.listen(5)  # allows server to accept connections
 
 	except socket.error as msg:
 		print("Socket binding error: " + str(msg) + "\n" + "Retrying...")
+		
+#-- Recursively calls socket_bind() function --#		
 		socket_bind()
 #----------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------- Accept Connection ------------------------------------------------------#
-# accept from multiple clients and save to list
+# Accept from multiple clients and save to list
 def accept_connection(message_queues):
 
 	while inputs:
-	#------- select() function returns three new lists, which are supsets of list passed to select() ---------#
-		readable, writeable, exceptional = select.select(inputs, outputs, inputs)
+#----------------------------------------------------------------------------------------------------------------------#
+#-------------- select() function returns three new lists, which are subsets of list passed to select() ---------------#
 
-	#---------------- passes over readable sockets to see if they are ready to accept data -------------------#
+		readable, writeable, exceptional = select.select(inputs, outputs, inputs)		
+#----------------------------------------------------------------------------------------------------------------------#
+
+#----------------------- Passes over readable sockets to see if they are ready to accept data -------------------------#
 		for s in readable:
+		
 		#---------------- If socket is "server" socket then ready to accept another connection-----------#
 			if s is server:
 				connection, client_address = s.accept()
 				print("Connection from: ", client_address)
+				
+				#-- Make non-blocking socket --#
 				connection.setblocking(0)
+				
+				#-- Add socket to list of connections --#
 				inputs.append(connection)
+				
+				#- Send welcome message to client -#
 				connection.send("Hello, welcome. Please enter a command".encode("utf-8"))
 
-				message_queues[connection] = queue.Queue() #give the connection a queue for data we want to send
-		#----- Data is read with recv() then message in the queue so it can be sent back to client -----#
+				#-- Give the connection a queue for data we want to send --#
+				message_queues[connection] = queue.Queue() 
+		
+		#-------- If readable socket is not server socket then client socket ready to read data --------#
 			else:
 				data = s.recv(2048)
 				if data:
 					print("received message: " + data.decode() + " from ", s.getpeername())
-					outgoing_message = "Message received"
-
+					outgoing_message = work(data)
+					
+		#------------ Message put in the queue so it can be sent back to client when ready -------------#
 					message_queues[s].put(outgoing_message)
 
+		#--------- If client socket not in list of outputs, add it so we can write back to it ----------#
 					if s not in outputs:
 						outputs.append(s)
-			#---------  A readable socket with no data is from a client that has disconnected----------#
+						
+		#-----------  A readable socket with no data is from a client that has disconnected ------------#
 				else:
 					print("Closing socket" , client_address)
 					if s in outputs:
@@ -103,27 +122,22 @@ def accept_connection(message_queues):
 
 			del message_queues[s]
 #----------------------------------------------------------------------------------------------------------------------#
-#---------------------------------------- Communication Function-------------------------------------------------------#
-#yet to me finished---------------
-'''
-def communication(conn):
-	conn.send(str.encode("Hello, and welcome. Please enter a command\n"))
-	while True:
-		incoming_message = conn.recv(2048)
-		incoming_message = incoming_message.decode("utf-8")
-		print(incoming_message)
+#------------------ Work() Function performs any of the server profided operations ------------------------------------#
+def work(command):
 
-		if incoming_message == 'quit':
-			outgoing_message = 'Goodbye'
-			conn.send(str.encode(outgoing_message))
-			break
-		elif incoming_message == 'list':
-			outgoing_message = list_connections()
-		else:
-			outgoing_message = "Command not recognized"
+	command = command.decode()
+	answer = ""
 
-		conn.send(str.encode(outgoing_message))		
-'''
+	if command == "blockchain":
+		answer = "BLOCKCHAIN BABY!!!"
+	elif command == "echo":
+		answer = command
+	elif command == "list":
+		answer =str(inputs)
+	else:
+		answer = "Sorry, not a valid command, please try again"
+
+	return answer
 #----------------------------------------------------------------------------------------------------------------------#
 #-------------------------------------------------- Run Main()---------------------------------------------------------#
 socket_create()
