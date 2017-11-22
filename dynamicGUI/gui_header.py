@@ -2,12 +2,13 @@
 import tkinter.messagebox
 import csv
 
+'''
 #read from file
 with open("test.txt", "r") as data:
     input = []
     for line in data:
         input.append(line)
-
+'''
 def body_text(label):
     label.config(font=("", 14))
 
