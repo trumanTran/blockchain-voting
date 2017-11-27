@@ -11,10 +11,11 @@ use position as a secondary measure to make sure everything is ready.
 
 
 class Vote:
-    __ZipCode = None  # take zip-code for sorts involving this class object
+    __voterID = None  # take zip-code for sorts involving this class object
     __VoteBlock = None  # Undefined list, first list is the 'race' being run, second is position, and third are chosen candidates.
+
     def __init__(self):
-        self.__ZipCode = None
+        self.__voterID = None
         self.__VoteBlock = None
 
     def insert_votes(self, block):
@@ -22,36 +23,15 @@ class Vote:
         # Need something to check that it is of type list of list of list, with multiple nested lists.
         self.__VoteBlock = block
 
-    def insert_zip(self, zip):
-        self.__ZipCode = zip
+    def insert_id(self, id):
+        self.__voterID = id
 
     def get_votes(self):
         return self.__VoteBlock
 
-    def get_zip(self):
-        return self.__ZipCode
-'''
-    def get_data_pos(self, race, position): #Function that 'gets' the voter stuff at the specified race and position set.
-        #Again, not real helpful by itself, but this is just a proof of concept. It returns a 'section' of the specified race and position (a list).
-        return self.__VoteBlock[race][position]
+    def get_id(self):
+        return self.__voterID
 
-    def search_votes_for_hit(self, name): #Function to 'comb' data by searching through a list of list of lists at O(n^3) complexity. Horribly inefficient.
-        for i in range(0, len(self.__VoteBlock)):
-            for j in range (0, len(self.__VoteBlock[i])):
-                for k in range (0, len(self.__VoteBlock[i][j])):
-                    if(self.__VoteBlock[i][j][k] == name):
-                        return True #Found a hit, return the value.
-        #End of the line, no hits found.
-        return False
-
-    def print_votes(self): #Special function that will print out everything in order. It will go through the list of lists of lists by lists.
-        #This means it prints out entire swathes of people who were elected for a specific position.
-        for i in range (0, len(self.__VoteBlock)):
-            for j in range (0, len(self.__VoteBlock[i])):
-                #Now print out the entire list stored in each position.
-                print(self.__VoteBlock[i][j])
-    #Functions beyond this point are for the 'secondary' method, where the info is the header for their relevant sections.
-'''
     def alt_retrieve(self, race, position):
         return self.__VoteBlock[race+1][position+1]
         #Retrieves the actual thing, which is +1 because of the appended extra data.
@@ -59,48 +39,48 @@ class Vote:
     def alt_get_race(self, pos):
         return self.__VoteBlock[pos][0]
 	
-	def alt_search_votes(self, name):
-		#Combs data for hit just like above, ignores 'initial' position tag which is reserved for the race being participated in/the position.
-		for i in range (0, len(self.__VoteBlock)):
-			for j in range (1, len(self.__VoteBlock[i])):
-				if(self.__VoteBlock[i][j] == name):
-					return True #Got a hit on the list of lists.
-		#No hits found.
-		return False
+    def alt_search_votes(self, name):
+        #Combs data for hit just like above, ignores 'initial' position tag which is reserved for the race being participated in/the position.
+        for i in range (0, len(self.__VoteBlock)):
+            for j in range (1, len(self.__VoteBlock[i])):
+                if(self.__VoteBlock[i][j] == name):
+                    return True #Got a hit on the list of lists.
+        #No hits found.
+        return False
 	
-	def alt_print_votes(self):
+    def alt_print_votes(self):
         #Prints out everything in order, according to following formula - [Race/Position - People (seperated by commas)].
         #Each race and position is seperated by a new line. DESIGNED FOR THINGS OTHER THAN TUPLES.
-		for i in range (0, len(self.__VoteBlock)):
-            print(__VoteBlock[i][0] + " - ")
+        for i in range (0, len(self.__VoteBlock)):
+            print(self.__VoteBlock[i][0] + " - ")
             for j in range (0, len(self.__VoteBlock[i])):
                 if (j < len(self.__VoteBlock[i])):
-					print (__VoteBlock[i][j] + ", ")
-				elif (j == len(self.__VoteBlock[i])):
-					print (__VoteBlock[i][j] + "." + "/n")
+                    print (self.__VoteBlock[i][j] + ", ")
+                elif (j == len(self.__VoteBlock[i])):
+                    print (self.__VoteBlock[i][j] + "." + "/n")
                 #Should give rows that look like [Race, Position] - [Names] in rows per race/position pairing.
 	
-	def alt_print_tuple_votes(self):
-		#Prints out everything in order, according to following formula - [Race/Position - People (seperated by commas)].
-		#Each race and position is seperated by a new line.
-		identitag = None
-		for i in range (0, len(self.__VoteBlock)):
-			if(identitag != __VoteBlock[i][0][0]):
-				#The third 0 is actually for the in-built tuple INSIDE the container, so a third 0 is needed to specify which part of the tuple we want.
-				identitag = __VoteBlock[i][0][0]
-				print (identitag + "/n")
-			print (__VoteBlock[i][0][1] + " - ") #Prints the 'position' of the race. Since each position changes, there's no need for the identitag like above.
-			for j in range (1, len(self.__VoteBlock[i])):
-				#Since values for the race and position are stored as tuples, we do this the following way:
-				#Print the first tuple object (the race) and keep going until the tuple object changes in some way. We need a value to host this.
-				#This would be so much easier with a list of lists of lists, but whatever.
-				if (j < len(self.__VoteBlock[i])):
-					print (__VoteBlock[i][j] + ", ")
-				elif (j == len(self.__VoteBlock[i])):
-					print (__VoteBlock[i][j] + "." + "/n")
+    def alt_print_tuple_votes(self):
+        #Prints out everything in order, according to following formula - [Race/Position - People (seperated by commas)].
+        #Each race and position is seperated by a new line.
+        identitag = None
+        for i in range (0, len(self.__VoteBlock)):
+            if(identitag != self.VoteBlock[i][0][0]):
+                #The third 0 is actually for the in-built tuple INSIDE the container, so a third 0 is needed to specify which part of the tuple we want.
+                identitag = self.VoteBlock[i][0][0]
+                print (identitag + "/n")
+            print (self.VoteBlock[i][0][1] + " - ") #Prints the 'position' of the race. Since each position changes, there's no need for the identitag like above.
+            for j in range (1, len(self.__VoteBlock[i])):
+                #Since values for the race and position are stored as tuples, we do this the following way:
+                #Print the first tuple object (the race) and keep going until the tuple object changes in some way. We need a value to host this.
+                #This would be so much easier with a list of lists of lists, but whatever.
+                if (j < len(self.__VoteBlock[i])):
+                    print (self.VoteBlock[i][j] + ", ")
+                elif (j == len(self.self.VoteBlock[i])):
+                    print (self.VoteBlock[i][j] + "." + "/n")
 					
 # Some test functions here
-SomeBallot = Vote()
+#SomeBallot = Vote()
 # Created a new ballot. Now, pass some random stuff to it.
 # First we must create a simulated list of list of lists.
 PoliRace = ["Law", "Local", "Unseen University"]
@@ -157,6 +137,30 @@ def alt_insert_block():
     #Everything appended. Now return the value of the appended block.
     return AltRace
 
-SomeBallot.insert_votes(alt_insert_block())
+#SomeBallot.insert_votes(alt_insert_block())
 '''Copy crap as an entire list of list of lists and store it in the object. Now we can pass it.
 To actually get the values back for the race type and the positions in each race, you have to consult a completely separate list or list of lists.'''
+
+
+'''
+    def get_data_pos(self, race, position): #Function that 'gets' the voter stuff at the specified race and position set.
+        #Again, not real helpful by itself, but this is just a proof of concept. It returns a 'section' of the specified race and position (a list).
+        return self.__VoteBlock[race][position]
+
+    def search_votes_for_hit(self, name): #Function to 'comb' data by searching through a list of list of lists at O(n^3) complexity. Horribly inefficient.
+        for i in range(0, len(self.__VoteBlock)):
+            for j in range (0, len(self.__VoteBlock[i])):
+                for k in range (0, len(self.__VoteBlock[i][j])):
+                    if(self.__VoteBlock[i][j][k] == name):
+                        return True #Found a hit, return the value.
+        #End of the line, no hits found.
+        return False
+
+    def print_votes(self): #Special function that will print out everything in order. It will go through the list of lists of lists by lists.
+        #This means it prints out entire swathes of people who were elected for a specific position.
+        for i in range (0, len(self.__VoteBlock)):
+            for j in range (0, len(self.__VoteBlock[i])):
+                #Now print out the entire list stored in each position.
+                print(self.__VoteBlock[i][j])
+    #Functions beyond this point are for the 'secondary' method, where the info is the header for their relevant sections.
+'''
