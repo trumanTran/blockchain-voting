@@ -53,9 +53,9 @@ class Vote:
         #Each race and position is seperated by a new line. DESIGNED FOR THINGS OTHER THAN TUPLES.
         for i in range (0, len(self.__VoteBlock)):
             print(self.__VoteBlock[i][0] + " - ")
-            for j in range (0, len(self.__VoteBlock[i])):
+            for j in range (1, len(self.__VoteBlock[i])):
                 if (j < len(self.__VoteBlock[i])):
-                    print (self.__VoteBlock[i][j] + ", ")
+                    print (self.__VoteBlock[i][j])
                 elif (j == len(self.__VoteBlock[i])):
                     print (self.__VoteBlock[i][j] + "." + "/n")
                 #Should give rows that look like [Race, Position] - [Names] in rows per race/position pairing.
