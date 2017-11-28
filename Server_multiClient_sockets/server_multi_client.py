@@ -114,14 +114,26 @@ def accept_connections(message_queues):
                     print("received message: " + data.decode() + " from ", s.getpeername())
                     outgoing_message = work(data)
 
-                    # ------------ Message put in the queue so it can be sent back to client when ready -------------#
-                    message_queues[s].put(outgoing_message)
-
-                    # --------- If client socket not in list of outputs, add it so we can write back to it ----------#
+                    # ------ If client socket not in list of outputs, add it so we can write back to it ----#
                     if s not in outputs:
                         outputs.append(s)
+                    #---------------------------------------------------------------------------------------#
 
-                        # -----------  A readable socket with no data is from a client that has disconnected ------------#
+                    #------------------ Broadcast command will broadcast to all clients --------------------#
+                    if outgoing_message[:9] == "broadcast":
+                        outgoing_message = outgoing_message[10:]
+                        for x in message_queues:
+                            message_queues[x].put(outgoing_message)
+                    #---------------------------------------------------------------------------------------#
+
+                    # -------- Message put in the queue so it can be sent back to client when ready --------#
+                    else:
+                        message_queues[s].put(outgoing_message)
+                    #---------------------------------------------------------------------------------------#
+
+
+
+                # ----------  A readable socket with no data is from a client that has disconnected --------#
                 else:
                     print("Closing socket", s.client_address)
                     if s in outputs:
@@ -212,7 +224,7 @@ def verify_client(connection, clients):
     #-- Bool variable for determining if a client exists in table --#
         found_match = False
 
-    #-------------- Loop through list of clients and see if a match with login info is founc -------------------#
+    #-------------- Loop through list of clients and see if a match with login info is found -------------------#
         for x in clients:
 
             #-- Client's machine id and private key match so it is confirmed to connect --#
@@ -265,17 +277,24 @@ def verify_client(connection, clients):
 # ---------------------------------------------------------------------------------------------------------------------#
 # ------------------ Work() Function performs any of the server profided operations -----------------------------------#
 def work(command):
+
     command = command.decode()
     answer = ""
 
     if command == "blockchain":
         answer = "BLOCKCHAIN BABY!!!"
+
     elif command == "echo":
-        answer = command
+        answer = "echo"
+
     elif command == "list":
-        answer = str(inputs)
+        answer = str(inputs)+
+
+    elif command == "broadcast":
+        answer = "broadcast hello world!"
+
     else:
-        answer = "Sorry, not a valid command, please try again"
+        answer = "Sorry, not a valid command, please try again\n"
 
     return answer
 
