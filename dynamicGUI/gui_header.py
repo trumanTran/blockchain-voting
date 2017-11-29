@@ -1,18 +1,6 @@
 import tkinter.messagebox
 import csv
 
-#read from file
-with open("test.txt", "r") as data:
-    input = []
-    for line in data:
-        input.append(line)
-
-def body_text(label):
-    label.config(font=("", 14))
-
-def header_text(label):
-    label.config(font=("", 26))
-
 def configure(frame):
     for x in range(0, 3):
         frame.columnconfigure(x, weight=1)
@@ -46,3 +34,16 @@ def LoadCSV(CSVFileName):
         reader = csv.reader(f)
         somelist = list(reader) #This actually loads the whole csv file.
         return somelist #Return entire list of lists object.
+
+def fillConfirmation(number, list, frame):
+    if len(list) == 0:
+        for i in range(number):
+            tkinter.Label(frame, text='', font=("",12)).grid(row=i)
+    else:
+        counter = 0
+        for i in range(len(list)):
+            tkinter.Label(frame, text=list[i][0], font=("",12), bg = 'yellow').grid(row = counter, column = 0)
+            counter+=1
+            for j in range (1, len(list[i])):
+                tkinter.Label(frame, text="                         "+list[i][j]+"                         ", font=("",12)).grid(row = counter, column = 0)
+                counter+=1
