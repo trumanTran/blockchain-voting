@@ -18,12 +18,12 @@ class Vote:
         self.__voterID = None
         self.__VoteBlock = None
 
-    def insert_votes(self, block):
+    def set_votes(self, block):
         # We use this function to modify the private values.
         # Need something to check that it is of type list of list of list, with multiple nested lists.
         self.__VoteBlock = block
 
-    def insert_id(self, id):
+    def set_id(self, id):
         self.__voterID = id
 
     def get_votes(self):
