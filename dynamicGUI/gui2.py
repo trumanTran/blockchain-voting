@@ -1,7 +1,9 @@
 from tkinter import *
 import tkinter.messagebox
 import gui_header
-import example_container
+import VotingContainer
+import blockchain
+
 ballot = gui_header.LoadCSV('Ballot.csv')
 votes = []
 WriteInEntries = []
@@ -9,14 +11,23 @@ limitations = []
 all_frames = []
 compiledBallot = []
 frameCount = 1
-block = example_container.Vote
+block = VotingContainer.Vote
+#Station ID
+stationId = 1234
+
+# ---------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------- Initialize Blockchain-- ----------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
+blockchain.create_new_chain()
+index = 1
+
 # ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------- Root Window declaration ----------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
 root = Tk()
-root.attributes("-fullscreen", True)
+#root.attributes("-fullscreen", True)
 root.title("Voting Booth")
-#root.config(width = 600, height = 600)
+root.config(width = 600, height = 600)
 # ---------------------------------------------------------------------------------------------------------------------
 # -------------------------------- create first frame, confirmation page, last frame ----------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
@@ -111,6 +122,18 @@ def check(confirmation):
         populate()
         gui_header.fillConfirmation(0, compiledBallot, canvasFrame)
 
+def appendBlock():
+	global index
+	currentBallot = block.get_votes(block)
+	
+	blockchain.append_block(stationId, currentBallot)
+	print("Machine ID: ", blockchain.chain[index].machine_id)
+	print("Time: ", blockchain.chain[index].timestamp)
+	print("Ballot: ", blockchain.chain[index].data)
+	print("Current Hash: ", blockchain.chain[index].hash)
+	print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
+	index = index + 1
+		
 def reset():
     global frameCount
     LoginFrame.tkraise()
@@ -125,6 +148,7 @@ def reset():
         gui_header.enable(entry,var,1)
     nameInfo.delete(0,END)
     addressInfo.delete(0,END)
+    appendBlock()
     for i in compiledBallot:
         for j in range(1,len(i)):
             del i[1]
