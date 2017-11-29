@@ -1,8 +1,7 @@
 from tkinter import *
 import tkinter.messagebox
 import gui_header
-import VotingContainer
-import blockchain
+import example_container
 ballot = gui_header.LoadCSV('Ballot.csv')
 votes = []
 WriteInEntries = []
@@ -10,22 +9,14 @@ limitations = []
 all_frames = []
 compiledBallot = []
 frameCount = 1
-block = VotingContainer.Vote
-#Station ID
-stationId = 1234
-
-# ---------------------------------------------------------------------------------------------------------------------
-# ---------------------------------------------- Initialize Blockchain ----------------------------------------------
-# ---------------------------------------------------------------------------------------------------------------------
-blockchain.create_new_chain()
-index = 1
+block = example_container.Vote
 # ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------- Root Window declaration ----------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
 root = Tk()
-#root.attributes("-fullscreen", True)
+root.attributes("-fullscreen", True)
 root.title("Voting Booth")
-root.config(width = 600, height = 600)
+#root.config(width = 600, height = 600)
 # ---------------------------------------------------------------------------------------------------------------------
 # -------------------------------- create first frame, confirmation page, last frame ----------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
@@ -81,8 +72,6 @@ def populate():
     #print(compiledBallot)  # send instance of John's container to the back end
     block.set_votes(block, compiledBallot)
     block.set_id(block, nameInfo.get() + addressInfo.get())
-    
-    
 
 def check(confirmation):
     global frameCount
@@ -121,18 +110,6 @@ def check(confirmation):
     if confirmation == 1:
         populate()
         gui_header.fillConfirmation(0, compiledBallot, canvasFrame)
-        
-def appendBlock():
-    global index
-    currentBallot = block.get_votes(block)
-    
-    blockchain.append_block(stationId, currentBallot)
-    print("Machine ID: ", blockchain.chain[index].machine_id)
-    print("Time: ", blockchain.chain[index].timestamp)
-    print("Ballot: ", blockchain.chain[index].data)
-    print("Current Hash: ", blockchain.chain[index].hash)
-    print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
-    index = index + 1
 
 def reset():
     global frameCount
@@ -148,14 +125,9 @@ def reset():
         gui_header.enable(entry,var,1)
     nameInfo.delete(0,END)
     addressInfo.delete(0,END)
-    appendBlock()
-    
     for i in compiledBallot:
         for j in range(1,len(i)):
             del i[1]
-    
-    
-    
 
 def configureCanvas(event):
     canvas.configure(scrollregion=canvas.bbox("all"), width=500, height=500)
@@ -248,29 +220,7 @@ for i in range(0,len(ballot)):
     limit = [0, 0] # Allowed vote, number of candidates
     writeIn = Entry(candidateFrame, state='disabled', font=("", 12))
     WriteInEntries.append(writeIn)
-    if  cb = Checkbutton(candidateFrame, variable = candidateArray[len(candidateArray)-1], font=("",12),
-                         command=lambda e=WriteInEntries[i], v=candidateArray[len(candidateArray)-1], x=0:
-                         gui_header.enable(e, v, x))
-        limit[1]+=1
-        cb.grid(sticky = 'W', row = len(ballot[i]) - 1)
-        votes.append(candidateArray)
-    limitations.append(limit)
-# ---------------------------------------------------------------------------------------------------------------------
-# ------------------------------------ Populate confirmation list with blank space ------------------------------------
-# ---------------------------------------------------------------------------------------------------------------------
-listRowNumber = len(ballot)
-for i in range(len(limitations)):
-    listRowNumber = listRowNumber + limitations[i][0]
-gui_header.fillConfirmation(listRowNumber, [], canvasFrame)
-# ---------------------------------------------------------------------------------------------------------------------
-# -------------------------------------- Flip around lists to match output of GUI -------------------------------------
-# ---------------------------------------------------------------------------------------------------------------------
-limitations.reverse()
-votes.reverse()
-ballot.reverse()
-compiledBallot.reverse()
-LoginFrame.tkraise()
-root.mainloop() ballot[i][1] == '1': # if a single candidate race
+    if ballot[i][1] == '1': # if a single candidate race
         limit[0] = 1
         var = IntVar()
         votes.append([var])
@@ -326,4 +276,3 @@ ballot.reverse()
 compiledBallot.reverse()
 LoginFrame.tkraise()
 root.mainloop()
-
