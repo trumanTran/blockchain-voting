@@ -2,8 +2,11 @@ from tkinter import *
 import tkinter.messagebox
 import gui_header
 import VotingContainer
+import SQLVoterTable
 import blockchain
-
+# ---------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------- Initialize Local Variables ----------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 ballot = gui_header.LoadCSV('Ballot.csv')
 votes = []
 WriteInEntries = []
@@ -14,13 +17,16 @@ frameCount = 1
 block = VotingContainer.Vote
 #Station ID
 stationId = 1234
-
 # ---------------------------------------------------------------------------------------------------------------------
-# ---------------------------------------------- Initialize Blockchain-- ----------------------------------------------
+# ------------------------------------------- Initialize Local Tables Once --------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
+#SQLVoterTable.create_voter_reg()
+#SQLVoterTable.CSV_Load_Voters('NamesAddresses.csv')
+# ---------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------- Initialize Blockchain ------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
 blockchain.create_new_chain()
 index = 1
-
 # ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------- Root Window declaration ----------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
@@ -49,7 +55,7 @@ def proceed():
 def lessCheck(counter):
     if counter < limitations[frameCount - 2][0]:
         answer = tkinter.messagebox.askquestion("YOU ARE ABOUT TO OMIT YOUR VOTE(S)",
-                                                "Are you sure you would like to omit your vote(s) for this race?")
+                                                "Are you sure you would like to omit "+(str)(limitations[frameCount-2][0]-counter)+" vote(s) for this race?")
         if answer == 'yes':
             WriteInEntries[len(WriteInEntries) - frameCount + 1].config(state='disabled')
             proceed()
@@ -123,17 +129,18 @@ def check(confirmation):
         gui_header.fillConfirmation(0, compiledBallot, canvasFrame)
 
 def appendBlock():
-	global index
-	currentBallot = block.get_votes(block)
-	
-	blockchain.append_block(stationId, currentBallot)
-	print("Machine ID: ", blockchain.chain[index].machine_id)
-	print("Time: ", blockchain.chain[index].timestamp)
-	print("Ballot: ", blockchain.chain[index].data)
-	print("Current Hash: ", blockchain.chain[index].hash)
-	print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
-	index = index + 1
-		
+    global index
+    currentBallot = block.get_votes(block)
+
+    blockchain.append_block(stationId, currentBallot)
+    print("Machine ID: ", blockchain.chain[index].machine_id)
+    print("Time: ", blockchain.chain[index].timestamp)
+    print("Ballot: ", blockchain.chain[index].data)
+    print("Current Hash: ", blockchain.chain[index].hash)
+    print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
+    index = index + 1
+    proceed()
+
 def reset():
     global frameCount
     LoginFrame.tkraise()
@@ -144,13 +151,12 @@ def reset():
     for entry in WriteInEntries:
         var = IntVar(0)
         gui_header.enable(entry, var, -1)
-        entry.delete(0,END)
-        gui_header.enable(entry,var,1)
-    nameInfo.delete(0,END)
-    addressInfo.delete(0,END)
-    appendBlock()
+        entry.delete(0, END)
+        gui_header.enable(entry, var, 1)
+    nameInfo.delete(0, END)
+    addressInfo.delete(0, END)
     for i in compiledBallot:
-        for j in range(1,len(i)):
+        for j in range(1, len(i)):
             del i[1]
 
 def configureCanvas(event):
@@ -162,7 +168,18 @@ def changeVote():
     for i in compiledBallot:
         for j in range(1,len(i)):
             del i[1]
+    for entry in WriteInEntries:
+        var = IntVar(0)
+        gui_header.enable(entry, var, -1)
+
     proceed()
+
+def validate():
+    print(nameInfo.get(), addressInfo.get())
+    #if SQLVoterTable.check_voter(nameInfo.get(), addressInfo.get()):
+    proceed()
+    #else:
+     #   tkinter.messagebox.showinfo("NOTICE", "Your name and/or address are invalid")
 # ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------- login Frame ----------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
@@ -176,7 +193,7 @@ welcome = Label(LoginFrame, text="WELCOME", font=("",18))
 nameInfo = Entry(LoginFrame_subFrame, font=("",12))
 addressInfo = Entry(LoginFrame_subFrame, font=("",12))
 # ----- button definition -----
-submit = Button(LoginFrame, text="SUBMIT", command = proceed, font=("",14))
+submit = Button(LoginFrame, text="SUBMIT", command = validate, font=("",14))
 submit.config(width=30, bg='gray80')
 quit = Button(LoginFrame, text="QUIT", command= lambda x = root: gui_header.quitCheck(x))
 # ----- placement of widgets onto the first frame -----
@@ -199,7 +216,7 @@ end = Button(lastFrame_SubFrame, text="FINISH", command = reset, font=("",14))
 # ---------------------------------------------------------------------------------------------------------------------
 confirmation_subframe = Frame(confirmation_page)
 confirmation_subframe.grid(column=1, row=1)
-confirm = Button(confirmation_subframe, text='CONFIRM', command=proceed)
+confirm = Button(confirmation_subframe, text='CONFIRM', command=appendBlock)
 redo = Button(confirmation_subframe, text='CHANGE', command=changeVote)
 prompt = Label(confirmation_subframe, text='PLEASE CONFIRM', font=("",14))
 # ----- Scrollbar in case the entries in a ballot extend off screen -----
