@@ -19,13 +19,13 @@ def create_voter_reg():
 	
 def insert_voter(voter_name, voter_add):
 	#Insert a new voter, with the last bool value being set to 'false'.
-	cur.execute('INSERT INTO voter_reg VALUES (?,?,?)', (voter_name, voter_add, '0'))
+	cur.execute('INSERT INTO voter_reg VALUES (?,?,?)', (voter_name, voter_add, 0))
 	#Each voter must be inserted manually, but there will be a bulk insertion method avaliable later when this is refined.
 
 def mass_insert_voters(voter_list):
 	#Inserts n amount of names and addresses.
     for i in range(0, len(voter_list)):
-		insert_voter(voter_list[i][0], voter_list[i][0])
+		insert_voter(voter_list[i][0], voter_list[i][1])
 	#Stuff inserted.
 	
 def CSV_Load_Voters(file_name):
