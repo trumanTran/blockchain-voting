@@ -9,37 +9,46 @@ import csv
 #------------------------------------------ Class for holding client info ---------------------------------------------#
 class Client_Info:
     #-- Constructor --#
-    def __init__(self, machineID, privateKey, ipAddress ):
+    def __init__(self, machineID, privateKey, ipAddress, portNumber):
         self.machineID = machineID
         self.privateKey = privateKey
         self.ipAddress = ipAddress
+        self.portNumber = portNumber
 
     def change_ip_address(self, ipAddress):
         self.ipAddress = ipAddress
+
+    def change_port_number(self, portNumber):
+        self.portNumber = portNumber
 
 #----------------------------------------------------------------------------------------------------------------------#
 #------------------- Import peer info from csv file and place into list of Client Info objects ------------------------#
 clients = []
 
-with open("peer_info.csv") as csvFile:
+with open("peer_info_port.csv") as csvFile:
     readCSV = csv.reader(csvFile, delimiter=',')
 
     for row in readCSV:
         machineID = row[0]
         privateKey = row[1]
         ipAddress = row[2]
+        portNumber = row[3]
 
-        clients.append(Client_Info(machineID,privateKey,ipAddress ))
+        clients.append(Client_Info(machineID,privateKey,ipAddress,portNumber ))
 
     for x in clients:
-        print("machine ID: ", x.machineID, " private key: ", x.privateKey, " IP Address: ", x.ipAddress)
+        print("machine ID: ", x.machineID, " private key: ", x.privateKey, " IP Address: ", x.ipAddress, x.portNumber)
 #----------------------------------------------------------------------------------------------------------------------#
-# ----- Declare empty List for Input & Output, an empty queue for message queues, a login Queue, and a thread lock -----#
+# ---- Declare empty List for Input & Output, an empty queue for message queues, a login Queue, and a thread lock -----#
+#-- Empty Lists --#
 inputs = []
 outputs = []
+#-- Dictionary of queues --#
 message_queues = {}
 
-login_queue = {}
+#--Dictionary of boolean values to keep track of who is logged in --#
+#client_is_logged_in = {}
+
 login_lock = threading.Lock()
 
 # ----------------------------------------------------------------------------------------------------------------------#
@@ -97,6 +106,7 @@ def accept_connections(message_queues):
             # ---------------- If socket is "server" socket then ready to accept another connection-----------#
             if s is server:
                 connection, client_address = s.accept()
+                #client_is_logged_in[connection] = False
                 print("Connection from: ", client_address)
 
                 #------------------------------------------------------------------------------#
@@ -112,7 +122,10 @@ def accept_connections(message_queues):
                 data = s.recv(2048)
                 if data:
                     print("received message: " + data.decode() + " from ", s.getpeername())
+
+                    #-- Dummy function for now --#
                     outgoing_message = work(data)
+                    #---------------------------#
 
                     # ------ If client socket not in list of outputs, add it so we can write back to it ----#
                     if s not in outputs:
@@ -127,11 +140,12 @@ def accept_connections(message_queues):
                     #---------------------------------------------------------------------------------------#
 
                     # -------- Message put in the queue so it can be sent back to client when ready --------#
+                    elif outgoing_message == "LOGIN":
+                        message_queues[s].put("")
+                        print("Login attempt")
+                    #---------------------------------------------------------------------------------------#
                     else:
                         message_queues[s].put(outgoing_message)
-                    #---------------------------------------------------------------------------------------#
-
-
 
                 # ----------  A readable socket with no data is from a client that has disconnected --------#
                 else:
@@ -172,6 +186,7 @@ def verify_client(connection, clients):
     #-- Declare inputs  and message_queues as global variable so we can modify it --#
     global inputs
     global message_queues
+    #global client_is_logged_in
 
     MAXIMUM_NUMBER_OF_ATTEMPTS = 5
     number_of_tries = 0;
@@ -179,45 +194,42 @@ def verify_client(connection, clients):
 
     connection.setblocking(1)
 
-    connection.send("Please enter your machine ID number, private key, and IP Address.".encode("utf-8"))
+    connection.send("Please enter your machine ID number and private key.".encode("utf-8"))
     login_info = connection.recv(2048)
     login_info = login_info.decode("utf-8")
 
     #------------------------------------------- Main While() Loop ------------------------------------------------#
     while (number_of_tries < MAXIMUM_NUMBER_OF_ATTEMPTS) and (connected is False):
 
-        length = len(login_info)
-        index = 0
-
         machineID = ""
         privateKey = ""
         ipAddress = ""
+        portNumber = ""
 
-        print("%s %s" %(length, index))
+        address = connection.getpeername()
+        address_length = len(address)
+
+        ipAddress = str(address[0])
+        portNumber = address[1]
+
     #------------------------------------- 3 While loops for parsing string --------------------------------------#
-
+        length = len(login_info)
+        index = 0
         #-- Parse login_info string to get machine name --#
         while(login_info[index] != " ") and (index < length):
             machineID += login_info[index]
             index = index + 1
 
         #--  Increase index to skip blank space --#
-        index = index + 1
+        index +=1
 
         #-- Parse login_info string to get private key --#
-        while(login_info[index] != " ") and (index < length):
+        #while(login_info[index] != " ") and (index < length):
+        while(index < length):
             privateKey += login_info[index]
             index = index + 1
 
-         #-- Increase index to skip blank space --#
-        index = index + 1
-
-        #-- Parse login_info string to get IP Address --#
-        while(index < length):
-            ipAddress += login_info[index]
-            index = index + 1
-
-        print("Your login info is: %s %s %s" % (machineID, privateKey, ipAddress))
+        print("Your login info is: %s %s %s %s" % (machineID, privateKey, ipAddress, portNumber))
     #-------------------------------------------------------------------------------------------------------------#
     #-------------------------------------------------------------------------------------------------------------#
 
@@ -231,6 +243,7 @@ def verify_client(connection, clients):
             if (x.machineID == machineID) and (x.privateKey == privateKey):
                 #-- Match found so update variable --#
                 found_match = True
+
                 print("match found!")
 
                 #-- Client's IP address does not match so we update it in the Client list --#
@@ -238,18 +251,9 @@ def verify_client(connection, clients):
                     x.change_ip_address(ipAddress)
                     print("Updated IP Address")
 
-                #-- Make non-blocking socket --#
-                connection.setblocking(0)
-
-                #-- Add socket to list of connections --#
-                inputs.append(connection)
-                print("Added to inputs")
-
-                #-- Send welcome message to client --#
-                connection.send("Hello, welcome to the peer to peer network".encode("utf-8"))
-
-                #-- Give the connection a queue for data we want to send --#
-                message_queues[connection] = queue.Queue()
+                if(x.portNumber != portNumber):
+                    x.change_port_number(portNumber)
+                    print("Updated Port Number")
 
                 #-- connected variable is set to true --#
                 connected = True
@@ -274,6 +278,20 @@ def verify_client(connection, clients):
         connection.send("Sorry, you failed to provide a valid username and/or password in five attempts".encode("utf-8"))
         connection.close()
 
+    else:
+        # -- Send welcome message to client --#
+        connection.send("CONFIRMED".encode("utf-8"))
+
+        # -- Add socket to list of connections --#
+        inputs.append(connection)
+        print("Added to inputs")
+
+        # -- Give the connection a queue for data we want to send --#
+        message_queues[connection] = queue.Queue()
+
+        # -- Make non-blocking socket --#
+        connection.setblocking(0)
+        #client_is_logged_in[connection] = True
 # ---------------------------------------------------------------------------------------------------------------------#
 # ------------------ Work() Function performs any of the server profided operations -----------------------------------#
 def work(command):
@@ -288,13 +306,16 @@ def work(command):
         answer = "echo"
 
     elif command == "list":
-        answer = str(inputs)+
+        answer = str(inputs)
 
     elif command == "broadcast":
         answer = "broadcast hello world!"
 
+   # elif "Machine" in command:
+       # answer = "LOGIN"
+
     else:
-        answer = "Sorry, not a valid command, please try again\n"
+        answer = "LOGIN" #"sorry, invalid command"
 
     return answer
 
