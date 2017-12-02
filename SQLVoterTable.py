@@ -44,15 +44,15 @@ def check_voter(target_name, target_address):
 	It will form a query that checks for a bool from two conditionals. If true, it will then do a check for validity (the 'voted' bool value).
 	If the bool value is false, the voter did not vote yet, and it is set to true, and a 'true' (1) bool is returned.
 	Else, the bool value is false (0). False is a rejection of voter, keep this in mind. Everything is case sensitive.'''
-	cur.execute('SELECT hasvoted FROM voter_reg WHERE name=? AND address=?', (target_name, target_address))
+	cur.execute('SELECT hasvoted FROM voter_reg WHERE name=:tname AND address=:tadd', {"tname": target_name, "tadd": target_address})
 	bool_val = cur.fetchone()
 	#Retrieves vote value. 'true' and 'false' become 1 and 0 respectively.
-	if(bool_val == '0'): #Assuming they haven't voted yet...
+	if(bool_val == 0): #Assuming they haven't voted yet...
 		#Pass an argument that sets the bool column to true, and also confirm the voter can vote.
 		'''Insert vote message passing thing here.'''
 		cur.execute('UPDATE voter_reg SET hasvoted = 1 WHERE name=? AND address=?', (target_name, target_address)) #Execute bool change.
 		return True;
-	elif(bool_val == '1'):
+	elif(bool_val == 1):
 		#They voted already.
 		'''Insert already voted message.'''
 		return False;
