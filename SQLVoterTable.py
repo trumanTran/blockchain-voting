@@ -21,7 +21,8 @@ def insert_voter(voter_name, voter_add):
 	#Insert a new voter, with the last bool value being set to 'false'.
 	cur.execute('INSERT INTO voter_reg VALUES (?,?,?)', (voter_name, voter_add, 0))
 	#Each voter must be inserted manually, but there will be a bulk insertion method avaliable later when this is refined.
-
+        con.commit()
+	
 def mass_insert_voters(voter_list):
 	#Inserts n amount of names and addresses.
     for i in range(0, len(voter_list)):
@@ -51,6 +52,7 @@ def check_voter(target_name, target_address):
 		#Pass an argument that sets the bool column to true, and also confirm the voter can vote.
 		'''Insert vote message passing thing here.'''
 		cur.execute('UPDATE voter_reg SET hasvoted = 1 WHERE name=? AND address=?', (target_name, target_address)) #Execute bool change.
+		con.commit()
 		return True;
 	elif(bool_val == 1):
 		#They voted already.
