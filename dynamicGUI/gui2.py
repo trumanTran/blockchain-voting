@@ -175,11 +175,8 @@ def changeVote():
     proceed()
 
 def validate():
-    print(nameInfo.get(), addressInfo.get())
-    #if SQLVoterTable.check_voter(nameInfo.get(), addressInfo.get()):
-    proceed()
-    #else:
-     #   tkinter.messagebox.showinfo("NOTICE", "Your name and/or address are invalid")
+        if SQLVoterTable.check_voter(nameInfo.get(), addressInfo.get()):
+        proceed()
 # ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------- login Frame ----------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
