@@ -1,7 +1,6 @@
 import sqlite3
-import os
-import sys
 import csv
+import tkinter.messagebox
 
 #The goal is to create three entries on the table: The name of the person (hashed), the address of the person (also hashed), and a bool value that checks if they're registered or not.
 #For the hash, a cryptographic hash would be optimal.
@@ -48,17 +47,17 @@ def check_voter(target_name, target_address):
 	cur.execute('SELECT hasvoted FROM voter_reg WHERE name=:tname AND address=:tadd', {"tname": target_name, "tadd": target_address})
 	bool_val = cur.fetchone()
 	#Retrieves vote value. 'true' and 'false' become 1 and 0 respectively.
-	if(bool_val == (0,)): #Assuming they haven't voted yet...
-		#Pass an argument that sets the bool column to true, and also confirm the voter can vote.
-		'''Insert vote message passing thing here.'''
-		cur.execute('UPDATE voter_reg SET hasvoted = 1 WHERE name=? AND address=?', (target_name, target_address)) #Execute bool change.
-		con.commit()
-		return True;
-	elif(bool_val == (1,)):
-		#They voted already.
-		'''Insert already voted message.'''
-		return False;
-	else():
-		#No hits on list, suspicious...
-		'''Insert not registered voter message.'''
-		return False;
+	    if (bool_val == (0,)):  # Assuming they haven't voted yet...
+        # Pass an argument that sets the bool column to true, and also confirm the voter can vote.
+        '''Insert vote message passing thing here.'''
+        cur.execute('UPDATE voter_reg SET hasvoted = 1 WHERE name=? AND address=?',
+                    (target_name, target_address))  # Execute bool change.
+        return True;
+    elif (bool_val == (1,)):
+        # They voted already.
+        tkinter.messagebox.showinfo("NOTICE", "You have already voted")
+        return False;
+    else:
+        # No hits on list, suspicious...
+        tkinter.messagebox.showinfo("NOTICE", "Your name and/or address are not on the list.")
+        return False;
