@@ -1,24 +1,25 @@
 #Sending Code
+import blockchain
 import socket
 import sys
 
-def send_file(filename, host, port):
+def send_file(host, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         s.connect((host, port))
     except socket.error as e:
         print(str(e))
-        #break;         Break is outside loop error
+        #break;
     try:
-        file = open(filename, "rb")
-        bstream = file.read(1024)
+        sample = test_chain[0]
+        bstream = str.encode(sample.hash_block())
         while (bstream):
             s.send(bstream)
-            bstream = file.read(1024)
+            break;
         s.close()
     except socket.error as e:
         print(str(e))
-        #break;         Break is outside loop error
+        #break;
     
 def receive_file(filename, port):
     #Filename should be written as a set of chars or a string.
@@ -39,20 +40,20 @@ def receive_file(filename, port):
             file.write(bstream) #Protocol already set for file writing beforehand.
             bstream = conn.recv(1024) #Load next set of data.
             print(".")
-            if not bstream: #Once there is no data left to be received the loop is broken
+            if not bstream:
+                print("File received!")
                 break;
         break;
     file.close() #Done writing file.
     print("File saved!")
     conn.close()
     s.close() #Close everything.
-    
-    if __name__ == "__main__":
-    print("This is a test of sending and receiving")
+
+if __name__ == "__main__":
+    test_chain = [blockchain.create_genesis_block()]
     Selection = input("What do you want to do? ")
     if (Selection == "send"):
-        File = input("Send what file? ")
-        send_file(File, "NEED IP ADDRESS", 12345)
+        send_file("146.95.41.123", 12345)
     elif (Selection == "receive"):
         File = input("What are you expecting to receive? ")
         receive_file (File, 12345)
