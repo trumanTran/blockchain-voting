@@ -15,7 +15,6 @@ class Block:
         self.hash = self.hash_block()
 
     # Function to create hash of proposed block
-    # Will replace this function once we know how to create digital signature with machine private key
     def hash_block(self):
         sha = hasher.sha256()
         sha.update((str(self.machine_id) + str(self.timestamp) + str(self.data) + str(self.previous_hash)).encode("utf-8"))
@@ -25,29 +24,30 @@ class Block:
 def create_genesis_block():
     # Admin will create create genesis block so that's where all machines will start
     # Manually construct a block with
-    # arbitrary machhine_id and arbitrary previous hash
-    return Block(0, date.datetime.now(), "Genesis Block", "0")
+    # arbitrary machhine_id and hash of 'NULL'
+    return Block(0, date.datetime.now(), "Genesis Block", "NULL")
+    
+    # Create the blockchain and add the genesis block
+def create_new_chain(genesis):
+    global chain
+    global previous_block
+    chain = []
+    chain.append(genesis)
+    previous_block = chain[0]
 
 # Generate proposed block
-def next_block(current_id, current_data, last_block):
+def next_block(current_id, current_data):
+    global previous_block
     this_id = current_id
     this_timestamp = date.datetime.now()
     this_data = current_data
-    this_hash = last_block.hash
+    this_hash = previous_block.hash
     return Block(this_id, this_timestamp, this_data, this_hash)
     
-# Create the blockchain and add the genesis block
-def create_new_chain():
-    global chain
-    global previous_block
-    chain = [create_genesis_block()]
-    previous_block = chain[0]
-
 # Append block to blockchain
-def append_block(current_id, current_data):
+def append_block(proposed_block):
     global chain
     global previous_block
-    block_to_add = next_block(current_id, current_data, previous_block)
-    chain.append(block_to_add)
-    previous_block = block_to_add
+    chain.append(proposed_block)
+    previous_block = proposed_block
     
