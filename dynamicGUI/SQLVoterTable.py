@@ -13,7 +13,7 @@ buffer = ""
 	
 def create_voter_reg():
 	#Creates the voter table.
-	cur.execute('CREATE TABLE voter_reg (name TEXT, address TEXT, hasvoted BOOLEAN NOT NULL)')
+	cur.execute('CREATE TABLE IF NOT EXISTS voter_reg (name TEXT, address TEXT, hasvoted BOOLEAN NOT NULL)')
 	con.commit()
 	
 def insert_voter(voter_name, voter_add):
