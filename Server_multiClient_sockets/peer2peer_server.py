@@ -79,11 +79,10 @@ def makeserversocket(portNumber, backlog=5):
 machineID, key, and message containing block to add to blockchain if that is the command. Returns tuple containing:
 (command, machineID, Key, message)'''
 
-def parse_incoming_message(message):
+def parse_incoming_message(incoming_message):
 
     # -- command 4 char long, machineID 10 char long, key 5 char long --#
-
-    message_length = len(message)
+    message_length = len(incoming_message)
 
     command = ""
     machineID = ""
@@ -92,24 +91,25 @@ def parse_incoming_message(message):
 
     index = 0
     # -- Parse first four character to obtain command --#
-    while index < COMMAND_LENGTH:
-        command += message[index]
+    while(index < COMMAND_LENGTH):
+        command += incoming_message[index]
         index += 1
-        command = command.upper()
+
+    command = command.upper()
 
     # -- Parse next 10 characters to get machineID --#
     while index < (COMMAND_LENGTH + MACHINE_ID_LENGTH):
-        machineID += message[index]
+        machineID += incoming_message[index]
         index += 1
 
     # -- parse next five characters to get peer key --#
     while index < (COMMAND_LENGTH + MACHINE_ID_LENGTH + KEY_LENGTH):
-        key += message[index]
+        key += incoming_message[index]
         index += 1
 
     # -- Parse message which will contain block to add to blockchain --#
     while index < message_length:
-        message += message[index]
+        message += incoming_message[index]
         index += 1
 
     return (command, machineID, key, message)
@@ -123,11 +123,15 @@ returns false'''
 def verify_incoming_peer(connection, machineID, key):
 
     found_match = False
-
-    host = connection.gethostname()
-    ipAddress = host[0]
-    portNumber = host[1]
-
+    
+    '''I need to figure out a way to get the ip address and the port number for this to work properly!!!'''
+    
+    '''
+    ipAddress = connection.gethostbyname[0]
+    portNumber = connection.getjhostbyname[1]
+    '''
+    ipAddress = ""
+    portNumber = 999
     print("Machine login info is: %s %s %s %s" % (machineID, key, ipAddress, portNumber))
     # -------------------------------------------------------------------------------------------------------------#
 
@@ -137,6 +141,7 @@ def verify_incoming_peer(connection, machineID, key):
         if (x.machineID == machineID) and (x.privateKey == key):
             print("match found!")
 
+            '''
             # -- Client's IP address does not match so we update it in the Client list --#
             if (x.ipAddress != ipAddress):
                 x.change_ip_address(ipAddress)
@@ -145,6 +150,7 @@ def verify_incoming_peer(connection, machineID, key):
             if (x.portNumber != portNumber):
                 x.change_port_number(portNumber)
                 print("Updated Port Number: " + str(portNumber))
+            '''
 
             # -- Match found so update variable --#
             found_match = True
@@ -162,8 +168,11 @@ def verify_incoming_peer(connection, machineID, key):
         # -- Add socket to list of connections --#
         for p in registered_peers:
             if p.machineID == machineID:
-                p.ipAddress = ipAddress
-                p.portNumber = portNumber
+                #p.ipAddress = ipAddress
+                #p.portNumber = portNumber
+
+                ipAddress = p.ipAddress
+                portNumber = p.portNumber
 
                 already_exist = True
                 break
@@ -178,7 +187,7 @@ def verify_incoming_peer(connection, machineID, key):
 def handle_incoming_peer(connection):
 
     incoming_message = connection.recv(2048)
-    incoming_message = incoming_message.decode
+    incoming_message = incoming_message.decode()
 
     command, machineID, key, message = parse_incoming_message(incoming_message)
 
@@ -189,10 +198,10 @@ def handle_incoming_peer(connection):
 
     else:
         connection.send("ERRO".encode("utf-8"))
-        connection.close()
+        #connection.close()
 # ---------------------------------------------------------------------------------------------------------------------#
 # ---------------------------------------------------------------------------------------------------------------------#
-def handle_outgoing_peer(connection, command, message):
+def handle_outgoing_peer(connection, address, command, message):
 
     outgoing_message = command+str(SERVER_ID)+str(SERVER_KEY)+message
     connection.send(outgoing_message.encode("utf-8"))
@@ -226,44 +235,6 @@ def incoming_command_handler(connection, command, incoming_message):
 
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
-
-#--------------------------------------- Peer receives list of peers info ---------------------------------------------#
-    elif command == "PEER":
-
-        message_length = len(incoming_message)
-        index = 0
-
-        while index < message_length:
-            #-- MachineID --#
-            while(index < message_length) and (incoming_message[index] != " "):
-                machineID += incoming_message[index]
-                index +=1
-
-            index +=1
-
-            #-- Key --#
-            while(index < message_length) and (incoming_message[index] != " "):
-                key += incoming_message[index]
-                index +=1
-
-            index += 1
-
-            #-- ipAddress --#
-            while(index < message_length) and (incoming_message[index] != " ")
-                ipAddress += incoming_message[index]
-                index +=1
-
-            index +=1
-
-            #-- portNumber --#
-            while(index < message_length) and (incoming_message[index] != " "):
-                port += incoming_message[index]
-                index +=1
-
-            index +=1
-
-            #-- Add peer info to list of peers --#
-            peers.append(Peer_Info(machineID, key, ipAddress, port))
 
 #------------------------  Peer receives command to send copy of registered peer list ---------------------------------#
     elif command == "REGP":
@@ -301,7 +272,7 @@ def incoming_command_handler(connection, command, incoming_message):
             index += 1
 
             # -- ipAddress --#
-            while (index < message_length) and (incoming_message[index] != " ")
+            while (index < message_length) and (incoming_message[index] != " "):
                 ipAddress += incoming_message[index]
                 index += 1
 
@@ -337,18 +308,10 @@ def incoming_command_handler(connection, command, incoming_message):
         connection.send(outgoing_message.encode("utf-8"))
 
 #-------------------------- Peer sends out command to update the blockchain with new block ----------------------------#
-    elif command == "SEND":
+    #elif command == "SEND":
 
-        outgoing_message = outgoing_message = "ADDB" + SERVER_ID + str(SERVER_KEY)+ incoming_message
-        connection.send(outgoing_message.encode("utf-8"))
-
-#---------- Peer reveives confirmation that other peer has received new block and added it to blockchain --------------#
-
-    elif command == "CONF":
-        print("Confirmation to add block to blockchain")
-
-        block_chain.append(incoming_message)
-        print("Block added")
+        #outgoing_message = outgoing_message = "ADDB" + SERVER_ID + str(SERVER_KEY)+ incoming_message
+        #connection.send(outgoing_message.encode("utf-8"))
 #-----------------------------------------------------------------------------------------------------------------------#
     elif command == "ERRO":
         print("error performing operation")
@@ -361,8 +324,8 @@ def incoming_command_handler(connection, command, incoming_message):
 #----------------------------------------------------------------------------------------------------------------------#
     else:
         print("Invalid input")
-
 #----------------------------------------------------------------------------------------------------------------------#
+
 
 #----------------------------------------------------------------------------------------------------------------------#
 #----------------------------------------------  Main body of program  ------------------------------------------------#
@@ -370,17 +333,29 @@ def incoming_command_handler(connection, command, incoming_message):
 #-- Call function to read from csv table and populate peer and registered_peer lists --#
 read_peer_info("peer_info_port.csv")
 
-#-- Create server socket to listen for connections --#
-server_socket = makeserversocket(PORT_NUMBER)
+
 #server_socket.settimeout(2)
 
+#peer, address = server_socket.accept()
+
+#print(address[0] + " " + str(address[1]))
+#print("Connection from: %s" % (peer))
+
+#-- Create server socket to listen for connections --#
+server_socket = makeserversocket(PORT_NUMBER)
 while True:
 	
     peer, address = server_socket.accept()
     print("Connection from: %s" %(peer))
 
+    handle_incoming_peer(peer)
+    '''
     #-- Create new thread to handle verification function --#
     t = threading.Thread(target=handle_incoming_peer(peer))
     t.daemon = True
     t.start()
-#------------
+    '''
+#----------------------------------------------------------------------------------------------------------------------#
+
+#server.close()
+	
