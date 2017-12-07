@@ -13,7 +13,7 @@ buffer = ""
 def create_key_table():
 	#This function only has one job: make the key table.
 	#It has columns for the ip address, the signature, and the public key.
-	cur.execute('CREATE TABLE key_table (signature TEXT, ip_add TEXT, pub_key TEXT)')
+	cur.execute('CREATE TABLE IF NOT EXISTS key_table (signature TEXT, ip_add TEXT, pub_key TEXT)')
 	#Table created.
 	
 def insert_to_key_table(sig, ip_add, pub_key):
