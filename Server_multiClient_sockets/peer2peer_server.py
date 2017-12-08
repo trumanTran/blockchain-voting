@@ -323,6 +323,12 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
             #------------------------------------------------------------------#
             if found == False:
                 registered_peers.append(Peer_Info(machineID, key, ipAddress, port))
+
+            # -- clear variables to reuse --#
+            machineID = ""
+            key = ""
+            ipAddress = ""
+            port = ""
     #------------------------------------------------------------------------------------------------------------------#
 	#----------------------------- Peer receives command to update it's blockchain ------------------------------------#
     elif command == "ADDB":
