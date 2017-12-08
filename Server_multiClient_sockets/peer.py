@@ -283,6 +283,12 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
             # -- Add peer info to list of peers --#
             peers.append(Peer_Info(machineID, key, ipAddress, port))
 
+            # -- clear each variable so it can be reused --#
+            machineID = ""
+            key = ""
+            ipAddress = ""
+            port = ""
+
     #------------------------------------------------------------------------------------------------------------------#
     # -------------------  Peer receives command to send copy of registered peer list ---------------------------------#
     elif command == "REGP":
@@ -344,6 +350,12 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
             #------------------------------------------------------------------#
             if found == False:
                 registered_peers.append(Peer_Info(machineID, key, ipAddress, port))
+
+            # -- clear variables to reuse --#
+            machineID = ""
+            key = ""
+            ipAddress = ""
+            port = ""
 
     #---------------------------------------------------------------------------------------------------------------#
     #----------------------------- Peer receives command to update it's blockchain ---------------------------------#
@@ -450,19 +462,34 @@ def send_loop():
 #----------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------ Main body of program ------------------------------------------------#
 
+#-- Have to first add the server's security info so that it can communicate with this peer --#
+peers.append(Peer_Info(SERVER_MACHINE_ID, str(SERVER_KEY), "", ""))
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, SERVER_PORT))
-
-peers.append(Peer_Info(SERVER_MACHINE_ID, str(SERVER_KEY), "", ""))
-for i in peers:
-    print(i.machineID + str(i.privateKey) + i.ipAddress + str(i.portNumber))
 
 command = "INIT"
 message = ""
 handle_outgoing_peer(s,command,message)
 
-#s.connect ((HOST, SERVER_PORT))
-'''
+for i in peers:
+    print("Peers: " + i.machineID + " " +  i.privateKey + " " + i.ipAddress + " " + i.portNumber)
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, SERVER_PORT))
+
 command = "REGP"
 handle_outgoing_peer(s,command,message)
-'''
+
+for i in registered_peers:
+    print("Registered peers: " + " " + i.machineID + " " +  i.privateKey + " " + i.ipAddress + " " + i.portNumber)
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, SERVER_PORT))
+
+message = "BLOCKCHAIN BABY!!!"
+command = "ADDB"
+handle_outgoing_peer(s, command, message)
+
+for b in block_chain:
+    print(b)
