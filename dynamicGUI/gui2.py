@@ -15,17 +15,21 @@ all_frames = []
 compiledBallot = []
 frameCount = 1
 block = VotingContainer.Vote
-#Station ID
-stationId = 1234
+stationId = 1234 #Station ID
+blockToAdd = None
 # ---------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------- Initialize Local Tables Once --------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
-#SQLVoterTable.create_voter_reg()
-#SQLVoterTable.CSV_Load_Voters('NamesAddresses.csv')
+SQLVoterTable.create_voter_reg()
+SQLVoterTable.CSV_Load_Voters('NamesAddresses.csv')
 # ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------- Initialize Blockchain ------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
-blockchain.create_new_chain()
+#during actual initialization, genesis_block will be set equal to the genesis block given by central server
+#central server will be the one to call create_genesis_block() and send that to all nodes
+genesisBlock = blockchain.create_genesis_block()
+#machine will create its own local blockchain utilizing the genesis block given
+blockchain.create_new_chain(genesisBlock)
 index = 1
 # ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------- Root Window declaration ----------------------------------------------
@@ -130,9 +134,13 @@ def check(confirmation):
 
 def appendBlock():
     global index
+    global blockToAdd
     currentBallot = block.get_votes(block)
-
-    blockchain.append_block(stationId, currentBallot)
+    #set blockToAdd to the proposed block containing the current voter's ballot
+    blockToAdd = blockchain.next_block(stationId, currentBallot)
+    #This is where we should first broadcast block or otherwise check to see if we need accept block from another node
+    #Once ready, node will append block to local blockchain
+    blockchain.append_block(blockToAdd)
     print("Machine ID: ", blockchain.chain[index].machine_id)
     print("Time: ", blockchain.chain[index].timestamp)
     print("Ballot: ", blockchain.chain[index].data)
@@ -176,7 +184,7 @@ def changeVote():
 
 def validate():
         if SQLVoterTable.check_voter(nameInfo.get(), addressInfo.get()):
-        proceed()
+            proceed()
 # ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------- login Frame ----------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
