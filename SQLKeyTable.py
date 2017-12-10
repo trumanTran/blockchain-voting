@@ -13,7 +13,7 @@ buffer = ""
 def create_key_table():
 	#This function only has one job: make the key table.
 	#It has columns for the ip address, the signature, and the public key.
-	cur.execute('CREATE TABLE IF NOT EXISTS key_table (signature TEXT, ip_add TEXT, pub_key TEXT)')
+	cur.execute('CREATE TABLE IF NOT EXISTS key_table (signature TEXT UNIQUE NOT NULL, ip_add TEXT UNIQUE, pub_key TEXT UNIQUE NOT NULL)')
 	#Table created.
 	
 def insert_to_key_table(sig, ip_add, pub_key):
@@ -21,9 +21,14 @@ def insert_to_key_table(sig, ip_add, pub_key):
 	cur.execute('INSERT INTO key_table VALUES (?,?,?)', (sig, ip_add, pub_key))
 	con.commit()
 
+def set_disconnect(old_ip):
+	#Function to 'clean' the ip address field until the machine reconnects using the appropriate signature.
+	cur.execute('UPDATE key_table SET ip_add=NULL WHERE ip_add=?', (old_ip,))
+	con.commit()
+	
 def ip_change(sig, new_ip):
 	#Take a signature, find a hit on the SQL table, and then change its corresponding IP value to the new value.
-	cur.executemany('UPDATE key_table SET ip_add=? WHERE sig=?', (new_ip, sig))
+	cur.execute('UPDATE key_table SET ip_add=? WHERE sig=?', (new_ip, sig))
 	con.commit()
 	
 def decrypt(sig):
