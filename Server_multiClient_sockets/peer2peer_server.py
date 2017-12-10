@@ -18,18 +18,18 @@ import csv
 #----------------------------------------------------------------------------------------------------------------------#
 #--------------------------- These identifiers will be hard coded onto each machine -----------------------------------#
 SERVER_ID = "Server0001"
-SERVER_KEY = 10101
+SERVER_KEY = "10101"
 
 HOST = "localhost"
 IP_ADDRESS = socket.gethostbyname(socket.getfqdn())
-PORT_NUMBER = 999
+PORT_NUMBER = "999"
 
 #COMMAND_LENGTH = 4
 #MACHINE_ID_LENGTH = 10
 #KEY_LENGTH = 5
 
 #-- This message header will be used to send every message for verification purposes --#
-MESSAGE_HEADER = SERVER_ID + " " + str(SERVER_KEY) + " " + IP_ADDRESS + " " + str(PORT_NUMBER)
+MESSAGE_HEADER = SERVER_ID + " " + SERVER_KEY + " " + IP_ADDRESS + " " + PORT_NUMBER
 
 #----------------------------------------------------------------------------------------------------------------------#
 #------------------------------------List of all peers and their info -------------------------------------------------#
@@ -84,8 +84,8 @@ def makeserversocket(portNumber, backlog=5):
     #-- allows us to reuse socket immediately after it is closed --#
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     #-- binds to whatever IP Address the peer is assigne --#
-    s.bind(("", portNumber))
-    print("binding peer server socket to port %s" %((PORT_NUMBER)))
+    s.bind(("", int(portNumber)))
+    print("binding peer server socket to port " + portNumber)
     s.listen(backlog)
     print("Listening for connections...")
     return s
@@ -164,7 +164,7 @@ def verify_incoming_peer(connection, machineID, key, ip_address, port_number):
 
     found_match = False
 
-    print("Machine login info is: %s %s %s %s" % (machineID, key, ip_address, str(port_number)))
+    print("Machine login info is: " + machineID + " " + key + " " + ip_address + " " + port_number)
     # -------------------------------------------------------------------------------------------------------------#
 
     # -------------- Loop through list of clients and see if a match with login info is found -------------------#
@@ -180,7 +180,7 @@ def verify_incoming_peer(connection, machineID, key, ip_address, port_number):
 
             if (x.portNumber != int(port_number)):
                 x.change_port_number(port_number)
-                print("Updated Port Number: " + str(port_number))
+                print("Updated Port Number: " + port_number)
 
             # -- Match found so update variable --#
             found_match = True
@@ -226,7 +226,6 @@ def handle_incoming_peer(connection):
     else:
         outgoing_message = MESSAGE_HEADER + " " + "ERRO" + " " + ""
         connection.send(outgoing_message.encode("utf-8"))
-        #connection.close()
 # ---------------------------------------------------------------------------------------------------------------------#
 # ---------------------------------------------------------------------------------------------------------------------#
 def handle_outgoing_peer(connection, command, message=""):
@@ -258,7 +257,8 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
         outgoing_message = MESSAGE_HEADER + " " + "PEER" + " " + ""
 
         for x in peers:
-            outgoing_message += (str(x.machineID) + " " + str(x.privateKey) + " " + str(x.ipAddress) + " " + str(x.portNumber) + " ")
+            #outgoing_message += (str(x.machineID) + " " + str(x.privateKey) + " " + str(x.ipAddress) + " " + str(x.portNumber) + " ")
+            outgoing_message += (x.machineID + " " + x.privateKey + " " + x.ipAddress + " " + x.portNumber + " ")
 
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
@@ -271,7 +271,8 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
         outgoing_message = MESSAGE_HEADER + " " + "REPL" + " " + ""
 
         for x in registered_peers:
-            outgoing_message += (str(x.machineID) + " " + str(x.privateKey) + " " + str(x.ipAddress) + " " + str(x.portNumber) + " ")
+            #outgoing_message += (str(x.machineID) + " " + str(x.privateKey) + " " + str(x.ipAddress) + " " + str(x.portNumber) + " ")
+            outgoing_message += (x.machineID + " " + x.privateKey + " " + x.ipAddress + " " + x.portNumber + " ")
 
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
@@ -341,22 +342,30 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
     #------------------------------------------------------------------------------------------------------------------#
-	#------------------------ Peer sends out command to update the blockchain with new block --------------------------#
-    #elif command == "SEND":
-
-        #outgoing_message = MESSAGE_HEADER + "ADDB" + " "  + incoming_message
-        #connection.send(outgoing_message.encode("utf-8"))
-	#------------------------------------------------------------------------------------------------------------------#
 	#-------- Peer receives error message notifying it that something went wrong durring communication ----------------#
     elif command == "ERRO":
         print("error performing operation")
     #------------------------------------------------------------------------------------------------------------------#
-	#------------------------------------- Peer receives Command to close socket --------------------------------------#
-    #elif command == "QUIT":
-        #connection.close()
-	#------------------------------------------------------------------------------------------------------------------#
+    # ------------------------------------------ Peer quits network -------------------------------------------------#
+    elif command == "QUIT":
+        outgoing_message = MESSAGE_HEADER + " " + "DONE" + " " + incoming_message
+        connection.send(outgoing_message.encode("utf-8"))
+        print("Peer signed off from network")
+
+        for p in registered_peers:
+            if (p.ipAddress == ipAddress) and (p.portNumber == port_number):
+                del registered_peers[p]
+    # -----------------------------------------------------------------------------------------------------------------#
+    #------------------ Peer receives confirmation that it has disconnected from other peer ---------------------------#
+    elif command == "DONE":
+        print("Confirmed disconnection from peer")
+    #------------------------------------------------------------------------------------------------------------------#
 	#------------------------------------------ Recieves invalid input ------------------------------------------------#
     else:
+        outgoing_message = MESSAGE_HEADER + " " + "ERRO" + " " + incoming_message
+
+        print(outgoing_message)
+        connection.send(outgoing_message.encode("utf-8"))
         print("Invalid input")
     #------------------------------------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------------------------------------------------#
