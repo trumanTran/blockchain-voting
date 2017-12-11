@@ -30,7 +30,6 @@ SQLVoterTable.CSV_Load_Voters('NamesAddresses.csv')
 genesisBlock = blockchain.create_genesis_block()
 #machine will create its own local blockchain utilizing the genesis block given
 blockchain.create_new_chain(genesisBlock)
-index = 1
 # ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------- Root Window declaration ----------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
@@ -133,20 +132,21 @@ def check(confirmation):
         gui_header.fillConfirmation(0, compiledBallot, canvasFrame)
 
 def appendBlock():
-    global index
     global blockToAdd
+    index = len(blockchain.chain)
     currentBallot = block.get_votes(block)
     #set blockToAdd to the proposed block containing the current voter's ballot
     blockToAdd = blockchain.next_block(stationId, currentBallot)
-    #This is where we should first broadcast block or otherwise check to see if we need accept block from another node
+    #This is where we should first broadcast block or otherwise check to see if we accept block from another node
+	#For the time being, check whether previous hash of broadcast node is equal to latest block's current hash 
     #Once ready, node will append block to local blockchain
-    blockchain.append_block(blockToAdd)
+    if (blockToAdd.previous_hash == blockchain.chain[index-1].hash):
+        blockchain.append_block(blockToAdd)
     print("Machine ID: ", blockchain.chain[index].machine_id)
     print("Time: ", blockchain.chain[index].timestamp)
     print("Ballot: ", blockchain.chain[index].data)
     print("Current Hash: ", blockchain.chain[index].hash)
     print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
-    index = index + 1
     proceed()
 
 def reset():
