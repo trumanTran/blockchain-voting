@@ -342,6 +342,16 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
             port = ""
 
     #---------------------------------------------------------------------------------------------------------------#
+    #------------ Peer receive request from another node to join it's list of registered peers ---------------------#
+    elif command == "JOIN":
+        outgoing_message = MESSAGE_HEADER + " " + "WELC" + " " + incoming_message
+        print(outgoing_message)
+        connection.send(outgoing_message.encode("utf-8"))
+    #---------------------------------------------------------------------------------------------------------------#
+    #------------ Peer receives confirmation that it has joined list of registered peers for node ------------------#
+    elif command == "WELC":
+        print("Succesfully joined list of registered peers for node %s" %(connection))
+    #---------------------------------------------------------------------------------------------------------------#
     #----------------------------- Peer receives command to update it's blockchain ---------------------------------#
     elif command == "ADDB":
 
@@ -406,18 +416,19 @@ def listen_loop():
         print("Connection from: %s" % (peer))
 
         handle_incoming_peer(peer)
-        '''
+
         # -- Create new thread to handle verification function --#
         t = threading.Thread(target=handle_incoming_peer(peer))
         t.daemon = True
         t.start()
-		'''
+
 #----------------------------------------------------------------------------------------------------------------------#
 #----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
 def send_loop():
 
     command = ""
     message = ""
+
     peers.clear()
     registered_peers.clear()
 
@@ -427,8 +438,18 @@ def send_loop():
     # ------------------- Connect with server and get peer info ------------------------#
     command = "INIT"
     sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sending_socket.connect((HOST, int(SERVER_PORT)))
-    handle_outgoing_peer(sending_socket, command, message)
+    try:
+        sending_socket.connect((HOST, int(SERVER_PORT)))
+        handle_outgoing_peer(sending_socket, command, message)
+
+    except:
+        print("Failed to connect to server. please type the ip address and port number you would like to connec with.")
+        host_manual = input("IP Address-> ")
+        port_number_manual = input("Port Number-> ")
+
+        sending_socket.connect((HOST, int(SERVER_PORT)))
+        handle_outgoing_peer(sending_socket, command, message)
+
 
     # ----------------------------------------------------------------------------------#
     # ------------- Connect with server and get registered peer info -------------------#
@@ -436,8 +457,18 @@ def send_loop():
     sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sending_socket.connect((HOST, int(SERVER_PORT)))
     handle_outgoing_peer(sending_socket, command, message)
+
+    command = "JOIN"
+    sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sending_socket.connect((HOST, int(SERVER_PORT)))
+    handle_outgoing_peer(sending_socket, command, message)
     #-----------------------------------------------------------------------------------#
     #-----------------------------------------------------------------------------------#
+
+    t = threading.Thread(target=listen_loop())
+    t.daemon = True
+    t.start()
+
     #----------------------------- Loop keeps running as long as peer is active ---------------------------------------#
     while True:
         command = ""
@@ -454,20 +485,31 @@ def send_loop():
         #----------------------------------------------------------------------------------#
         #-- Command is to broadcast new block to entire network to add to the blockchain --#
         if command == "ADDB":
+
             for p in registered_peers:
                 sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sending_socket.connect((p.ipAddress, int(p.portNumber)))
-                handle_outgoing_peer(sending_socket, command, message)
-                sending_socket.close()
+                try:
+                    sending_socket.connect((p.ipAddress, int(p.portNumber)))
+                    handle_outgoing_peer(sending_socket, command, message)
+                    sending_socket.close()
+
+                except socket.error as e:
+                    print(str(e))
+                    del registered_peers[p]
+
 
         #----------------------------------------------------------------------------------#
         #---------------------------------- Quit Program ----------------------------------#
         elif command == "QUIT":
             for p in registered_peers:
                 sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sending_socket.connect((p.ipAddress, int(p.portNumber)))
-                handle_outgoing_peer(sending_socket, command, message)
-                sending_socket.close()
+                try:
+                    sending_socket.connect((p.ipAddress, int(p.portNumber)))
+                    handle_outgoing_peer(sending_socket, command, message)
+                    sending_socket.close()
+
+                except socket.error as e:
+                    print(str(e))
 
             break
         #----------------------------------------------------------------------------------#
