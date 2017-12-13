@@ -13,22 +13,22 @@ buffer = ""
 def create_key_table():
 	#This function only has one job: make the key table.
 	#It has columns for the ip address, the signature, and the public key.
-	cur.execute('CREATE TABLE IF NOT EXISTS key_table (signature TEXT UNIQUE NOT NULL, ip_add TEXT UNIQUE, pub_key TEXT UNIQUE NOT NULL)')
+	cur.execute('CREATE TABLE IF NOT EXISTS key_table (signature TEXT UNIQUE NOT NULL, ip_add TEXT UNIQUE, port TEXT UNIQUE, pub_key TEXT UNIQUE NOT NULL)')
 	#Table created.
 	
-def insert_to_key_table(sig, ip_add, pub_key):
+def insert_to_key_table(sig, ip_add, port, pub_key):
 	#Insert to the key table the values above.
-	cur.execute('INSERT INTO key_table VALUES (?,?,?)', (sig, ip_add, pub_key))
+	cur.execute('INSERT INTO key_table VALUES (?,?,?,?)', (sig, ip_add, port, pub_key))
 	con.commit()
 
 def set_disconnect(old_ip):
 	#Function to 'clean' the ip address field until the machine reconnects using the appropriate signature.
-	cur.execute('UPDATE key_table SET ip_add=NULL WHERE ip_add=?', (old_ip,))
+	cur.execute('UPDATE key_table SET ip_add=NULL, port=NULL WHERE ip_add=?', (old_ip,))
 	con.commit()
 	
-def ip_change(sig, new_ip):
+def ip_change(sig, new_ip, port):
 	#Take a signature, find a hit on the SQL table, and then change its corresponding IP value to the new value.
-	cur.execute('UPDATE key_table SET ip_add=? WHERE sig=?', (new_ip, sig))
+	cur.execute('UPDATE key_table SET ip_add=?, port=? WHERE sig=?', (new_ip, port, sig))
 	con.commit()
 	
 def decrypt(sig):
@@ -45,8 +45,9 @@ def delete_entry(sig):
 
 def find_node_ips():
 	#This is for the broadcast function. It recalls ALL IPS CURRENTLY LISTED and returns the entire column of ips as a list of tuples. Access as if it were a list, since the column is literally one width wide.
-	cur.execute('SELECT ip_add FROM key_table')
+	cur.execute('SELECT ip_add, port FROM key_table')
 	return cur.fetchall()
 
 """Table Creation"""
 create_key_table()
+#Need population function and other things.
