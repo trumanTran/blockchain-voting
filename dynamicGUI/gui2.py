@@ -4,6 +4,7 @@ import gui_header
 import VotingContainer
 import SQLVoterTable
 import blockchain
+import os
 # ---------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------- Initialize Local Variables ----------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
@@ -54,6 +55,7 @@ def proceed():
     else:
         lastFrame.tkraise()
         frameCount = frameCount + 1
+    return TRUE
 
 def lessCheck(counter):
     if counter < limitations[frameCount - 2][0]:
@@ -61,10 +63,12 @@ def lessCheck(counter):
                                                 "Are you sure you would like to omit "+(str)(limitations[frameCount-2][0]-counter)+" vote(s) for this race?")
         if answer == 'yes':
             WriteInEntries[len(WriteInEntries) - frameCount + 1].config(state='disabled')
-            proceed()
+            return proceed()
+	else:
+	    return FALSE
     else:
         WriteInEntries[len(WriteInEntries) - frameCount + 1].config(state='disabled')
-        proceed()
+        return proceed()
 
 def populate():
     global frameCount
@@ -95,23 +99,24 @@ def populate():
 
 def check(confirmation):
     global frameCount
+    progress = FALSE
     if limitations[frameCount - 2][0] == 1:
         if votes[frameCount - 2][0].get() == 0:
             answer = tkinter.messagebox.askquestion("YOU ARE ABOUT TO OMIT YOUR VOTE",
                                                     "Are you sure you would like to omit your vote for this race?")
             if answer == 'yes':
                 WriteInEntries[len(WriteInEntries) - frameCount + 1].config(state='disabled')
-                proceed()
+                progress = proceed()
         else:
             if votes[frameCount - 2][0].get() == limitations[frameCount - 2][1]:
                 if (WriteInEntries[len(WriteInEntries) - frameCount + 1].get()).strip() == '':
                     tkinter.messagebox.showinfo("NOTICE", "The Write-In ballot has been left blank")
                 else:
                     WriteInEntries[len(WriteInEntries) - frameCount + 1].config(state='disabled')
-                    proceed()
+                    progress = proceed()
             else:
                 WriteInEntries[len(WriteInEntries) - frameCount + 1].config(state='disabled')
-                proceed()
+                progress = proceed()
     else:
         counter = 0
         for i in range(0, len(votes[frameCount - 2])):
@@ -124,10 +129,10 @@ def check(confirmation):
             if (WriteInEntries[len(WriteInEntries) - frameCount + 1].get()).strip() == '':
                 tkinter.messagebox.showinfo("NOTICE", "The Write-In ballot has been left blank")
             else:
-                lessCheck(counter)
+                progress = lessCheck(counter)
         else:
-            lessCheck(counter)
-    if confirmation == 1:
+            progress = lessCheck(counter)
+    if confirmation == 1 and progress == TRUE:
         populate()
         gui_header.fillConfirmation(0, compiledBallot, canvasFrame)
 
@@ -149,8 +154,18 @@ def appendBlock():
     print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
     proceed()
 
+def printOut():
+    open("file.txt", 'w').close
+    file = open("file.txt", 'w+')
+    for i in range(0,len(compiledBallot)):
+        string = (str)(compiledBallot[i]) + '\n'
+        file.write(string)
+    file.close()
+    startfile("file.txt", "print")
+	
 def reset():
     global frameCount
+    #printOut()
     LoginFrame.tkraise()
     frameCount = 1
     for i in range(0, len(votes)):
