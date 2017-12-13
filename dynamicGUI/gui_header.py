@@ -13,11 +13,6 @@ def enable(Entry, var, limit):
     else:
         Entry.config(state='disabled')
 
-def proceed(races, frameCount):
-    races[frameCount].tkraise()
-    frameCount += 1
-    return frameCount
-
 def navigate(races, fCount):
     global frameCount
     frameCount = fCount
