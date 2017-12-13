@@ -10,7 +10,7 @@ con = sqlite3.connect("something.db")
 con.isolation_level = None
 cur = con.cursor()
 buffer = ""
-	
+
 def create_voter_reg():
 	#Creates the voter table.
 	cur.execute('CREATE TABLE voter_reg (name TEXT, address TEXT, hasvoted BOOLEAN NOT NULL)')
@@ -20,11 +20,11 @@ def insert_voter(voter_name, voter_add):
 	#Insert a new voter, with the last bool value being set to 'false'.
 	cur.execute('INSERT INTO voter_reg VALUES (?,?,?)', (voter_name, voter_add, 0))
 	#Each voter must be inserted manually, but there will be a bulk insertion method avaliable later when this is refined.
-        con.commit()
+	con.commit()
 	
 def mass_insert_voters(voter_list):
 	#Inserts n amount of names and addresses.
-    for i in range(0, len(voter_list)):
+	for i in range(0, len(voter_list)):
 		insert_voter(voter_list[i][0], voter_list[i][1])
 	#Stuff inserted.
 	
@@ -47,17 +47,17 @@ def check_voter(target_name, target_address):
 	cur.execute('SELECT hasvoted FROM voter_reg WHERE name=:tname AND address=:tadd', {"tname": target_name, "tadd": target_address})
 	bool_val = cur.fetchone()
 	#Retrieves vote value. 'true' and 'false' become 1 and 0 respectively.
-	    if (bool_val == (0,)):  # Assuming they haven't voted yet...
-        # Pass an argument that sets the bool column to true, and also confirm the voter can vote.
-        '''Insert vote message passing thing here.'''
-        cur.execute('UPDATE voter_reg SET hasvoted = 1 WHERE name=? AND address=?',
-                    (target_name, target_address))  # Execute bool change.
-        return True;
-    elif (bool_val == (1,)):
-        # They voted already.
-        tkinter.messagebox.showinfo("NOTICE", "You have already voted")
-        return False;
-    else:
-        # No hits on list, suspicious...
-        tkinter.messagebox.showinfo("NOTICE", "Your name and/or address are not on the list.")
-        return False;
+	if (bool_val == (0,)):  # Assuming they haven't voted yet...
+		# Pass an argument that sets the bool column to true, and also confirm the voter can vote.
+		'''Insert vote message passing thing here.'''
+		cur.execute('UPDATE voter_reg SET hasvoted = 1 WHERE name=? AND address=?',
+					(target_name, target_address))  # Execute bool change.
+		return True;
+	elif(bool_val == (1,)):
+		# They voted already.
+		tkinter.messagebox.showinfo("NOTICE", "You have already voted")
+		return False;
+	else:
+		# No hits on list, suspicious...
+		tkinter.messagebox.showinfo("NOTICE", "Your name and/or address are not on the list.")
+		return False;
