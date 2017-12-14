@@ -29,7 +29,7 @@ IP_ADDRESS = socket.gethostbyname(socket.getfqdn())
 PORT_NUMBER = "1000"
 
 #-- This message header will be used to send every message for verification purposes --#
-MESSAGE_HEADER = MACHINE_ID + " " + MACHINE_KEY + " " + IP_ADDRESS + " " + PORT_NUMBER
+MESSAGE_HEADER = MACHINE_ID + "|" + MACHINE_KEY + "|" + IP_ADDRESS + "|" + PORT_NUMBER
 #----------------------------------------------------------------------------------------------------------------------#
 #------------------------------List of peer info and list of peer socket connections-----------------------------------#
 peers = []
@@ -62,80 +62,21 @@ class Peer_Info:
 #----------------------------------------------------------------------------------------------------------------------#
 #----------------- This function creates a server socket, binds it and returns the object -----------------------------#
 def makeserversocket(portNumber, backlog=5):
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
     #-- allows us to reuse socket immediately after it is closed --#
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     #-- binds to whatever IP Address the peer is assigne --#
     s.bind(("", int(portNumber)))
-    print("binding peer server socket to port " + PORT_NUMBER)
     s.listen(backlog)
+    s.setblocking(0)
+
+    print("binding peer server socket to port " + PORT_NUMBER)
     print("Listening for connections...")
     return s
 #----------------------------------------------------------------------------------------------------------------------#
-# ---------------------- Parse recieved message into command, machineID, Key, and message ------------------------------#
-
-'''function takes socket connection and reveives message which it then parses out to obtain the connecting peer's command, 
-machineID, key, and message containing block to add to blockchain if that is the command. Returns tuple containing:
-(command, machineID, Key, message)'''
-
-'''Function takes decoded string sent from connected socket, which it then parses out to obtain the sending peer's 
-machineID, key, ip address, port number, the command, and the message sent. For out purposes the only messages sent will
-be either empty strings, or a block to add to the blockchain. The function returns a tuple of the form:
-(machine_id, key, ip_address, port_number, command, message)'''
-
-def parse_incoming_message(message_string):
-
-    machine_id = ""
-    key = ""
-    ip_address = ""
-    port_number = ""
-    command = ""
-    message = ""
-
-    message_length = len(message_string)
-    i = 0
-    #-- function to parse through string --#
-    while i < message_length:
-
-        #--------- machine_id -------------#
-        while message_string[i] != " ":
-            machine_id += message_string[i]
-            i += 1
-        #----------------------------------#
-        i += 1
-        #------------- key ----------------#
-        while message_string[i] != " ":
-            key += message_string[i]
-            i += 1
-        #----------------------------------#
-        i += 1
-        #---------- ip address ------------#
-        while message_string[i] != " ":
-            ip_address += message_string[i]
-            i += 1
-        #----------------------------------#
-        i += 1
-        #--------- port number ------------#
-        while message_string[i] != " ":
-            port_number += message_string[i]
-            i += 1
-        #----------------------------------#
-        i += 1
-        #------------ command -------------#
-        while message_string[i] != " ":
-            command += message_string[i]
-            i += 1
-        #----------------------------------#
-        i +=1
-        #------------- message ------------#
-        while i < message_length:
-            message += message_string[i]
-            i += 1
-        #----------------------------------#
-    #-------------------------------------------------------------------------------------------------------------#
-
-    return machine_id, key, ip_address, port_number, command, message
-# ---------------------------------------------------------------------------------------------------------------------#
 # --------------------------------------------- Authentication Function -----------------------------------------------#
 
 '''Function takes the machineID and key that have been extracted from the parse_incoming_message function, and checks 
@@ -198,7 +139,9 @@ def handle_incoming_peer(connection):
     incoming_message = connection.recv(2048)
     incoming_message = incoming_message.decode()
 
-    machine_id, key, ip_address, port_number, command, message = parse_incoming_message(incoming_message)
+    machine_id, key, ip_address, port_number, command, message = incoming_message.split("|", 6)
+
+    #machine_id, key, ip_address, port_number, command, message = parse_incoming_message(incoming_message)
 
     if verify_incoming_peer(connection, machine_id, key, ip_address, port_number):
         print("peer verified, command: " + command)
@@ -207,13 +150,13 @@ def handle_incoming_peer(connection):
 
     else:
         print("Unverified attempt to connect at: %s" %(connection))
-        outgoing_message = MESSAGE_HEADER + " " + "ERRO" + " " + ""
+        outgoing_message = MESSAGE_HEADER + "|" + "ERRO" + "|" + ""
         connection.send(outgoing_message.encode("utf-8"))
 # ---------------------------------------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------------------------------------------------#
 def handle_outgoing_peer(connection, command, message=""):
 
-    outgoing_message = MESSAGE_HEADER + " " + command + " " + message
+    outgoing_message = MESSAGE_HEADER + "|" + command + "|" + message
     connection.send(outgoing_message.encode("utf-8"))
 
     handle_incoming_peer(connection)
@@ -282,7 +225,7 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
 
         print("sending list of registered peers to %s " % (connection))
 
-        outgoing_message = MESSAGE_HEADER + " " + "REPL" + " " + ""
+        outgoing_message = MESSAGE_HEADER + "|" + "REPL" + "|" + ""
 
         for x in registered_peers:
             outgoing_message += (str(x.machineID) + " " + str(x.privateKey) + " " + str(x.ipAddress) + " " + str(x.portNumber) + " ")
@@ -344,7 +287,7 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     #---------------------------------------------------------------------------------------------------------------#
     #------------ Peer receive request from another node to join it's list of registered peers ---------------------#
     elif command == "JOIN":
-        outgoing_message = MESSAGE_HEADER + " " + "WELC" + " " + incoming_message
+        outgoing_message = MESSAGE_HEADER + "|" + "WELC" + "|" + incoming_message
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
     #---------------------------------------------------------------------------------------------------------------#
@@ -358,7 +301,7 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
         print("Adding block to blockchain, sent from peer: %s " % (connection))
         block_chain.append(incoming_message)
 
-        outgoing_message = MESSAGE_HEADER + " " + "CONF" + " " + incoming_message
+        outgoing_message = MESSAGE_HEADER + "|" + "CONF" + "|" + incoming_message
 
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
@@ -377,7 +320,7 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     #---------------------------------------------------------------------------------------------------------------#
     # ------------------------------------------ Peer quits network -------------------------------------------------#
     elif command == "QUIT":
-        outgoing_message = MESSAGE_HEADER + " " + "DONE" + " " + incoming_message
+        outgoing_message = MESSAGE_HEADER + "|" + "DONE" + "|" + incoming_message
         connection.send(outgoing_message.encode("utf-8"))
         print("Peer signed off from network")
 
@@ -391,7 +334,7 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     #------------------------------------------------------------------------------------------------------------------#
     #----------------------------- Peer receives unrecognized command to close socket ------------------------------#
     else:
-        outgoing_message = MESSAGE_HEADER + " " + "ERRO" + " " + incoming_message
+        outgoing_message = MESSAGE_HEADER + "|" + "ERRO" + "|" + incoming_message
 
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
@@ -406,22 +349,27 @@ def list(peer_list):
         print("List is empty")
 #----------------------------------------------------------------------------------------------------------------------#
 #----------------------------------------- Loop to Listen for connections ---------------------------------------------#
-def listen_loop():
-    server_socket = makeserversocket(int(PORT_NUMBER))
-    #server_socket.settimeout(2)
+def listen_loop(server_socket):
 
+    print("entered listen loop")
     while True:
+        try:
+            peer, address = server_socket.accept()
+            print("Connection from: %s" % (peer))
 
-        peer, address = server_socket.accept()
-        print("Connection from: %s" % (peer))
+            handle_incoming_peer(peer)
 
-        handle_incoming_peer(peer)
+        except:
+            pass
 
+    server_socket.close()
+
+'''
         # -- Create new thread to handle verification function --#
         t = threading.Thread(target=handle_incoming_peer(peer))
         t.daemon = True
         t.start()
-
+'''
 #----------------------------------------------------------------------------------------------------------------------#
 #----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
 def send_loop():
@@ -464,11 +412,14 @@ def send_loop():
     handle_outgoing_peer(sending_socket, command, message)
     #-----------------------------------------------------------------------------------#
     #-----------------------------------------------------------------------------------#
+    
+    '''	
+    server_socket = makeserversocket(int(PORT_NUMBER))
 
-    t = threading.Thread(target=listen_loop())
+    t = threading.Thread(target=listen_loop(server_socket))
     t.daemon = True
     t.start()
-
+    '''
     #----------------------------- Loop keeps running as long as peer is active ---------------------------------------#
     while True:
         command = ""
@@ -522,6 +473,9 @@ def send_loop():
         else:
             print("invalid command dummy!")
         #----------------------------------------------------------------------------------#
+
+    t.join()
+
 #----------------------------------------------------------------------------------------------------------------------#
 
 #----------------------------------------------------------------------------------------------------------------------#
