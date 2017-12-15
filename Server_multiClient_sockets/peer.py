@@ -431,7 +431,7 @@ def send_loop():
         message = ""
 
         print("Would you like to send a block to be added to the blockchain: (ADDB), list the peer info (LIST PEERS), "
-              "list the registered peer info (REGPEERS), or quit this program (QUIT)?")
+              "list the registered peer info (LIST REGPEERS), or quit this program (QUIT)?")
 
         command = input("command: ")
         command = command.upper()
