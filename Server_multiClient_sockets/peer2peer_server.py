@@ -24,10 +24,6 @@ HOST = "localhost"
 IP_ADDRESS = socket.gethostbyname(socket.getfqdn())
 PORT_NUMBER = "999"
 
-#COMMAND_LENGTH = 4
-#MACHINE_ID_LENGTH = 10
-#KEY_LENGTH = 5
-
 #-- This message header will be used to send every message for verification purposes --#
 MESSAGE_HEADER = SERVER_ID + "|" + SERVER_KEY + "|" + IP_ADDRESS + "|" + PORT_NUMBER
 
@@ -98,68 +94,6 @@ def makeserversocket(portNumber, backlog=5):
 machineID, key, ip address, port number, the command, and the message sent. For out purposes the only messages sent will
 be either empty strings, or a block to add to the blockchain. The function returns a tuple of the form:
 (machine_id, key, ip_address, port_number, command, message)'''
-#----------------------------------------------------------------------------------------------------------------------#
-# --------------------- Parse recieved message into command, machineID, Key, and message ------------------------------#
-'''
-
-def parse_incoming_message(message_string):
-
-    machine_id = ""
-    key = ""
-    ip_address = ""
-    port_number = ""
-    command = ""
-    message = ""
-
-    message_length = len(message_string)
-    i = 0
-    #-- function to parse through string --#
-    while i < message_length:
-
-        #--------- machine_id -------------#
-        while message_string[i] != " ":
-            machine_id += message_string[i]
-            i += 1
-        #----------------------------------#
-
-        i += 1
-        #------------- key ----------------#
-        while message_string[i] != " ":
-            key += message_string[i]
-            i += 1
-        #----------------------------------#
-
-        i += 1
-        #---------- ip address ------------#
-        while message_string[i] != " ":
-            ip_address += message_string[i]
-            i += 1
-        #----------------------------------#
-
-        i += 1
-        #--------- port number ------------#
-        while message_string[i] != " ":
-            port_number += message_string[i]
-            i += 1
-        #----------------------------------#
-
-        i += 1
-        #------------ command -------------#
-        while message_string[i] != " ":
-            command += message_string[i]
-            i += 1
-        #----------------------------------#
-
-        i +=1
-        #------------- message ------------#
-        while i < message_length:
-            message += message_string[i]
-            i += 1
-        #----------------------------------#
-    #------------------------------------------------------------------------------------------------------------------#
-
-    return machine_id, key, ip_address, port_number, command, message
-'''
 #----------------------------------------------------------------------------------------------------------------------#
 # --------------------------------------------- Authentication Function -----------------------------------------------#
 
@@ -327,28 +261,22 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
 #-- Call function to read from csv table and populate peer and registered_peer lists --#
 read_peer_info("peer_info_port.csv")
 
-
-
-
-#peer, address = server_socket.accept()
-
-#print("Connection from: %s" % (peer))
-
 #-- Create server socket to listen for connections --#
 server_socket = makeserversocket(PORT_NUMBER)
-#server_socket.settimeout(2)
+
+#-- Infinite loop listens for peers connecting --#
 while True:
 	
     peer, address = server_socket.accept()
     print("Connection from: %s" %(peer))
 
-    handle_incoming_peer(peer)
-    '''
+    #handle_incoming_peer(peer)
+
     #-- Create new thread to handle verification function --#
-    t = threading.Thread(target=handle_incoming_peer(peer))
+    t = threading.Thread(target=handle_incoming_peer, args=(peer,))
     t.daemon = True
     t.start()
-    '''
+
 #----------------------------------------------------------------------------------------------------------------------#
 
 #server.close()
