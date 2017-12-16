@@ -299,6 +299,18 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
 
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
+        
+    ###>>>>>File Receiver<<<<<###
+    #receives a file in the following format: Command yadda yadda, then a filename as a string and then a whitespace,
+    #then the actual file contents itself, all as bytestreams.
+    elif command == "FILE":
+        FileData = incoming_message.split()
+        print("Accepting file " + FileData[0] + ".")
+        FileWriter = open(FileData[0], 'wb')
+        FileWriter.write(FileData[1])
+        FileWriter.close() #Done writing file.
+        print("File saved as " + FileData[0] + ".")
+    
     # ---------------------------------------------------------------------------------------------------------------#
     # -------- Peer reveives confirmation that other peer has received new block and added it to blockchain ---------#
 
@@ -340,7 +352,7 @@ def outgoing_command_handler(command, message):
 
     global registered_peers
 
-    if command == "ADDB":
+    if command == "ADDB" || "FILE":
         for p in registered_peers:
             sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # -- allows us to reuse socket immediately after it is closed --#
@@ -375,6 +387,7 @@ def outgoing_command_handler(command, message):
 
     elif command == "LIST REGPEERS":
         list(registered_peers)
+        
         # -------------------------- Invalid Command Given ---------------------------------#
     else:
         print("invalid command dummy!")
@@ -466,6 +479,17 @@ def start_peer():
             sending_socket.close()
         except:
             print("failed to handle outgoing peer")
+###>>>>>--------------------------------------------- Send File --------------------------------------------------<<<<<#
+def Send_File(Filename):
+    #Takes filename, opens it, and sends it via fixed implementation.
+    try:
+        FileLoad = open(Filename, "rb")
+        FileBytes = FileLoad.read()
+        outgoing_command_handler("FILE", FileBytes)
+        FileLoad.close()
+    except:
+        print("Unable to open " + Filename + ".")
+        pass
 
 #----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------- Loop to Listen for connections --------------------------------------------#
