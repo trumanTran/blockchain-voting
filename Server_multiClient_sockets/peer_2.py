@@ -479,6 +479,17 @@ def start_peer():
             sending_socket.close()
         except:
             print("failed to handle outgoing peer")
+###>>>>>--------------------------------------------- Send File --------------------------------------------------<<<<<#
+def Send_File(Filename):
+    #Takes filename, opens it, and sends it via fixed implementation.
+    try:
+        FileLoad = open(Filename, "rb")
+        FileBytes = FileLoad.read()
+        outgoing_command_handler("FILE", FileBytes)
+        FileLoad.close()
+    except:
+        print("Unable to open " + Filename + ".")
+        pass
 
 #----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------- Loop to Listen for connections --------------------------------------------#
