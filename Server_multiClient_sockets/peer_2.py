@@ -39,8 +39,6 @@ block_chain = []
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------- Lock to prevent race conditions --------------------------------------------#
 lock = threading.Lock()
-
-
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------------------------------------------------------------------------------------#
@@ -58,8 +56,6 @@ class Peer_Info:
 
     def change_port_number(self, portNumber):
         self.portNumber = portNumber
-
-
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------------------------------------------------------------------------------------#
@@ -76,23 +72,19 @@ def makeserversocket(portNumber, backlog=5):
     s.setblocking(0)
 
     print("binding peer server socket to port " + PORT_NUMBER)
-    print("Listening for connections...")
     return s
-
-
 # ----------------------------------------------------------------------------------------------------------------------#
 # --------------------------------------------- Authentication Function -----------------------------------------------#
 
-'''Function takes the machineID and key that have been extracted from the parse_incoming_message function, and checks 
-the list of peers to make sure the connecting peer is authorized to connect. If it is the function returns true, if not
+'''Function takes the machineID and key that have been extracted from string.split() function, and checks the list of 
+peers to make sure the connecting peer is authorized to connect. If it is the function returns true, if not
 returns false'''
-
 
 # ----------------------------------------------------------------------------------------------------------------------#
 def verify_incoming_peer(connection, machineID, key, ip_address, port_number):
     found_match = False
 
-    print("Machine login info is: " + machineID + " " + key + "" + ip_address + "" + port_number)
+    print("Machine login info is: " + machineID + " " + key + " " + ip_address + " " + port_number)
     # -------------------------------------------------------------------------------------------------------------#
 
     # -------------- Loop through list of clients and see if a match with login info is found -------------------#
@@ -137,17 +129,14 @@ def verify_incoming_peer(connection, machineID, key, ip_address, port_number):
                 print("Added to list of registered peers.")
 
         return True
-
-
 # ---------------------------------------------------------------------------------------------------------------------#
 # ------------------------------------------------- Handle connection -------------------------------------------------#
 def handle_incoming_peer(connection):
+
     incoming_message = connection.recv(2048)
     incoming_message = incoming_message.decode()
 
     machine_id, key, ip_address, port_number, command, message = incoming_message.split("|", 6)
-
-    # machine_id, key, ip_address, port_number, command, message = parse_incoming_message(incoming_message)
 
     if verify_incoming_peer(connection, machine_id, key, ip_address, port_number):
         print("peer verified, command: " + command)
@@ -158,8 +147,6 @@ def handle_incoming_peer(connection):
         print("Unverified attempt to connect at: %s" % (connection))
         outgoing_message = MESSAGE_HEADER + "|" + "ERRO" + "|" + ""
         connection.send(outgoing_message.encode("utf-8"))
-
-
 # ---------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------------------------------------------------------------------------------------#
 def handle_outgoing_peer(connection, command, message=""):
@@ -167,15 +154,13 @@ def handle_outgoing_peer(connection, command, message=""):
     connection.send(outgoing_message.encode("utf-8"))
 
     handle_incoming_peer(connection)
-
-
-# ----------------------------------------------------------------------------------------------------------------------#
-# ----------------------------------------------------------------------------------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
 # ------------------ Command Handler takes commands from peer and performs necessary operation ------------------------#
 
 def incoming_command_handler(connection, ip_address, port_number, command, incoming_message):
-    global registered_peers
 
+    global registered_peers
     # ------------------------------------------------------------#
     # -- used for populating the peer and registered peer lists --#
     machineID = ""
@@ -190,7 +175,6 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     if command == "PEER":
 
         message_length = len(incoming_message)
-
         index = 0
         while index < message_length:
 
@@ -218,6 +202,7 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
                 index += 1
             # ---------------------------------------#
             index += 1
+
             # -- Add peer info to list of peers --#
             peers.append(Peer_Info(machineID, key, ipAddress, port))
 
@@ -302,7 +287,7 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     # ---------------------------------------------------------------------------------------------------------------#
     # ------------ Peer receives confirmation that it has joined list of registered peers for node ------------------#
     elif command == "WELC":
-        print("Succesfully joined list of registered peers for node %s" % (connection))
+        print("Succesfully joined list of registered peers for node at ip address: %s port number: %s" % (ip_address, port_number))
     # ---------------------------------------------------------------------------------------------------------------#
     # ----------------------------- Peer receives command to update it's blockchain ---------------------------------#
     elif command == "ADDB":
@@ -331,11 +316,11 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     elif command == "QUIT":
         outgoing_message = MESSAGE_HEADER + "|" + "DONE" + "|" + incoming_message
         connection.send(outgoing_message.encode("utf-8"))
-        print("Peer signed off from network")
 
-        for p in registered_peers:
+        for i, p in enumerate(registered_peers):
             if (p.ipAddress == ipAddress) and (p.portNumber == port_number):
-                del registered_peers[p]
+                print("Peer: %s signed off from network." %(p.machineID))
+                del registered_peers[i]
     # -----------------------------------------------------------------------------------------------------------------#
     # ------------------ Peer receives confirmation that it has disconnected from other peer ---------------------------#
     elif command == "DONE":
@@ -349,21 +334,142 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
         connection.send(outgoing_message.encode("utf-8"))
     # ---------------------------------------------------------------------------------------------------------------#
 
+# ---------------------------------------------------------------------------------------------------------------------#
+#-------------------------------------------- Outgoing command handler ------------------------------------------------#
+def outgoing_command_handler(command, message):
 
-# ----------------------------------------------------------------------------------------------------------------------#
-# ------------------------------------------------ List peer info ------------------------------------------------------#
+    global registered_peers
+
+    if command == "ADDB":
+        for p in registered_peers:
+            sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # -- allows us to reuse socket immediately after it is closed --#
+            sending_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+            try:
+                sending_socket.connect((p.ipAddress, int(p.portNumber)))
+                handle_outgoing_peer(sending_socket, command, message)
+                sending_socket.close()
+
+            except socket.error as e:
+                print(str(e))
+                del registered_peers[p]
+
+        # ----------------------------------------------------------------------------------#
+        # ---------------------------------- Quit Program ----------------------------------#
+    elif command == "QUIT":
+        for p in registered_peers:
+            try:
+                sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sending_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+                sending_socket.connect((p.ipAddress, int(p.portNumber)))
+                handle_outgoing_peer(sending_socket, command, message)
+                sending_socket.close()
+
+            except socket.error as e:
+                print(str(e))
+        # ----------------------------------------------------------------------------------#
+    elif command == "LIST PEERS":
+        list(peers)
+
+    elif command == "LIST REGPEERS":
+        list(registered_peers)
+        # -------------------------- Invalid Command Given ---------------------------------#
+    else:
+        print("invalid command dummy!")
+    # ----------------------------------------------------------------------------------#
+
+#----------------------------------------------------------------------------------------------------------------------#
+# ------------------------------------------------ List peer info -----------------------------------------------------#
 def list(peer_list):
     if peer_list:
         for i in peer_list:
             print(i.machineID + " " + i.privateKey + " " + i.ipAddress + " " + i.portNumber)
     else:
         print("List is empty")
+# ---------------------------------------------------------------------------------------------------------------------#
+#------------ Initilize Peer by connecting to server and requesting peer_info and registered_peer_info ----------------#
+def start_peer():
 
+    peers.clear()
+    registered_peers.clear()
 
-# ----------------------------------------------------------------------------------------------------------------------#
-# ----------------------------------------- Loop to Listen for connections ---------------------------------------------#
+    # --------- add server info to list of peers to allow communication --------#
+    peers.append(Peer_Info(SERVER_MACHINE_ID, str(SERVER_KEY), "", ""))
+    #---------------------------------------------------------------------------#
+
+    # ------------------- Connect with server and get peer info ------------------------#
+    command = "INIT"
+    message = ""
+    sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    try:
+        sending_socket.connect((HOST, int(SERVER_PORT)))
+        handle_outgoing_peer(sending_socket, command, message)
+
+    except socket.error as msg:
+        print("Failed to connect to server. " + str(msg))
+
+        host_manual = input("IP Address-> ")
+        port_number_manual = input("Port Number-> ")
+
+        try:
+            sending_socket.connect((host_manual, int(port_number_manual)))
+            handle_outgoing_peer(sending_socket, command, message)
+
+        except socket.error as msg:
+            print("Failed to connnect to server. " + str(msg))
+
+        finally:
+            sending_socket.close()
+    # ----------------------------------------------------------------------------------#
+
+    # ------------- Connect with server and get registered peer info -------------------#
+    command = "REGP"
+    sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    try:
+        sending_socket.connect((HOST, int(SERVER_PORT)))
+        handle_outgoing_peer(sending_socket, command, message)
+
+    except socket.error as msg:
+        print("Failed to connect to server. " + str(msg))
+        host_manual = input("IP Address-> ")
+        port_number_manual = input("Port Number-> ")
+
+        try:
+            sending_socket.connect((host_manual, int(port_number_manual)))
+            handle_outgoing_peer(sending_socket, command, message)
+
+        except socket.error as msg:
+            print("Failed to connnect to server. " + str(msg))
+    finally:
+        sending_socket.close()
+    #------------------------------------------------------------------------------------#
+
+    #---- Broadcast to other nodes to let them know new peer has joined network ---------#
+    command = "JOIN"
+
+    for peer in registered_peers:
+        try:
+            sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        except:
+            print("failed to create server socket")
+
+        try:
+            sending_socket.connect((peer.ipAddress, int(peer.portNumber)))
+        except:
+            print("failed to connect to %s %s %s" %(peer.machineID,peer.ipAddress,peer.portNumber))
+        try:
+            handle_outgoing_peer(sending_socket, command, message)
+            sending_socket.close()
+        except:
+            print("failed to handle outgoing peer")
+
+#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------- Loop to Listen for connections --------------------------------------------#
 def listen_loop(server_socket):
-    print("entered listen loop")
     while True:
         try:
             peer, address = server_socket.accept()
@@ -375,66 +481,23 @@ def listen_loop(server_socket):
             t.daemon = True
             t.start()
 
-
         except:
             pass
 
     server_socket.close()
-
-# ----------------------------------------------------------------------------------------------------------------------#
-# ----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
+# ---------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
 def MAIN():
-    command = ""
-    message = ""
 
-    peers.clear()
-    registered_peers.clear()
+    start_peer()
 
-    # --------- add server info to list of peers to allow communication --------#
-    peers.append(Peer_Info(SERVER_MACHINE_ID, str(SERVER_KEY), "", ""))
-    # ----------------------------------------------------------------------------------#
-    # ------------------- Connect with server and get peer info ------------------------#
-    command = "INIT"
-    sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        sending_socket.connect((HOST, int(SERVER_PORT)))
-        handle_outgoing_peer(sending_socket, command, message)
-
-    except:
-        print("Failed to connect to server. please type the ip address and port number you would like to connec with.")
-        host_manual = input("IP Address-> ")
-        port_number_manual = input("Port Number-> ")
-
-        sending_socket.connect((HOST, int(SERVER_PORT)))
-        handle_outgoing_peer(sending_socket, command, message)
-
-    # ----------------------------------------------------------------------------------#
-    # ------------- Connect with server and get registered peer info -------------------#
-    command = "REGP"
-    sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sending_socket.connect((HOST, int(SERVER_PORT)))
-    handle_outgoing_peer(sending_socket, command, message)
-
-    command = "JOIN"
-    sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sending_socket.connect((HOST, int(SERVER_PORT)))
-    handle_outgoing_peer(sending_socket, command, message)
-    # -----------------------------------------------------------------------------------#
-    # -----------------------------------------------------------------------------------#
-    # ----------------------------------------------------------------------------------------------------------------------#
-
-    # -----------------------------------------------------------------------------------#
-    # --------------------------- Execute listening function ----------------------------#
     server_socket = makeserversocket(int(PORT_NUMBER))
 
     t = threading.Thread(target=listen_loop, args=(server_socket,))
     t.daemon = True
     t.start()
-    # -----------------------------------------------------------------------------------#
-    # -----------------------------------------------------------------------------------#
 
-    # ----------------------------------------------------------------------------------------------------------------------#
-    # ----------------------------- Loop keeps running as long as peer is active ---------------------------------------#
+    #----------------------------- Loop keeps running as long as peer is active ---------------------------------------#
     while True:
         command = ""
         message = ""
@@ -446,54 +509,11 @@ def MAIN():
         command = command.upper()
 
         message = input("message: ")
+        outgoing_command_handler(command, message)
 
-        # ----------------------------------------------------------------------------------#
-        # -- Command is to broadcast new block to entire network to add to the blockchain --#
-        if command == "ADDB":
-
-            for p in registered_peers:
-                sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                try:
-                    sending_socket.connect((p.ipAddress, int(p.portNumber)))
-                    handle_outgoing_peer(sending_socket, command, message)
-                    sending_socket.close()
-
-                except socket.error as e:
-                    print(str(e))
-                    del registered_peers[p]
-
-
-        # ----------------------------------------------------------------------------------#
-        # ---------------------------------- Quit Program ----------------------------------#
-        elif command == "QUIT":
-            for p in registered_peers:
-                sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                try:
-                    sending_socket.connect((p.ipAddress, int(p.portNumber)))
-                    handle_outgoing_peer(sending_socket, command, message)
-                    sending_socket.close()
-
-                except socket.error as e:
-                    print(str(e))
-
+        if command == 'QUIT':
             break
-        # ----------------------------------------------------------------------------------#
-        elif command == "LIST PEERS":
-            list(peers)
-
-        elif command == "LIST REGPEERS":
-            list(registered_peers)
-        # -------------------------- Invalid Command Given ---------------------------------#
-        else:
-            print("invalid command dummy!")
-        # ----------------------------------------------------------------------------------#
-
-    t.join()
-
-
+    #------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------------------------------------------------------------------------------------#
-
-# ----------------------------------------------------------------------------------------------------------------------#
-# ------------------------------------------------ Main body of program ------------------------------------------------#
 
 MAIN()
