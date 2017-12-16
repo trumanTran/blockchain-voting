@@ -100,7 +100,7 @@ def verify_incoming_peer(connection, machineID, key, ip_address, port_number):
             if (x.ipAddress != ip_address):
                 x.change_ip_address(ip_address)
                 print("Updated IP Address: " + ip_address)
-
+            # -- Client's port number does not match so we update it in the Client list --#
             if (x.portNumber != port_number):
                 x.change_port_number(port_number)
                 print("Updated Port Number: " + str(port_number))
@@ -351,28 +351,25 @@ def list(peer_list):
 #----------------------------------------- Loop to Listen for connections ---------------------------------------------#
 def listen_loop(server_socket):
 
-    print("entered listen loop")
     while True:
         try:
             peer, address = server_socket.accept()
             print("Connection from: %s" % (peer))
 
-            handle_incoming_peer(peer)
+            #handle_incoming_peer(peer)
+
+            # -- Create new thread to handle verification function --#
+            t = threading.Thread(target=handle_incoming_peer, args=(peer,))
+            t.daemon = True
+            t.start()
 
         except:
             pass
 
     server_socket.close()
-
-'''
-        # -- Create new thread to handle verification function --#
-        t = threading.Thread(target=handle_incoming_peer(peer))
-        t.daemon = True
-        t.start()
-'''
 #----------------------------------------------------------------------------------------------------------------------#
 #----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
-def send_loop():
+def MAIN():
 
     command = ""
     message = ""
@@ -486,4 +483,4 @@ def send_loop():
 #----------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------ Main body of program ------------------------------------------------#
 
-send_loop()
+MAIN()
