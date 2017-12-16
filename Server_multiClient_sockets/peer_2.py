@@ -352,7 +352,7 @@ def outgoing_command_handler(command, message):
 
     global registered_peers
 
-    if command == "ADDB" || "FILE":
+    if command == ("ADDB" || "FILE"):
         for p in registered_peers:
             sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # -- allows us to reuse socket immediately after it is closed --#
