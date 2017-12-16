@@ -369,25 +369,21 @@ def listen_loop(server_socket):
             peer, address = server_socket.accept()
             print("Connection from: %s" % (peer))
 
-            handle_incoming_peer(peer)
+            #handle_incoming_peer(peer)
+            # -- Create new thread to handle verification function --#
+            t = threading.Thread(target=handle_incoming_peer, args=(peer,))
+            t.daemon = True
+            t.start()
+
 
         except:
             pass
 
     server_socket.close()
 
-
-'''
-        # -- Create new thread to handle verification function --#
-        t = threading.Thread(target=handle_incoming_peer(peer))
-        t.daemon = True
-        t.start()
-'''
-
-
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
-def send_loop():
+def MAIN():
     command = ""
     message = ""
 
@@ -500,4 +496,4 @@ def send_loop():
 # ----------------------------------------------------------------------------------------------------------------------#
 # ------------------------------------------------ Main body of program ------------------------------------------------#
 
-send_loop()
+MAIN()
