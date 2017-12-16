@@ -299,6 +299,18 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
 
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
+        
+    ###>>>>>File Receiver<<<<<###
+    #receives a file in the following format: Command yadda yadda, then a filename as a string and then a whitespace,
+    #then the actual file contents itself, all as bytestreams.
+    elif command == "FILE":
+        FileData = incoming_message.split()
+        print("Accepting file " + FileData[0] + ".")
+        FileWriter = open(FileData[0], 'wb')
+        FileWriter.write(FileData[1])
+        FileWriter.close() #Done writing file.
+        print("File saved as " + FileData[0] + ".")
+    
     # ---------------------------------------------------------------------------------------------------------------#
     # -------- Peer reveives confirmation that other peer has received new block and added it to blockchain ---------#
 
