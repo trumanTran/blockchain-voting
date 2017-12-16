@@ -239,11 +239,11 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     elif command == "QUIT":
         outgoing_message = MESSAGE_HEADER + "|" + "DONE" + "|" + incoming_message
         connection.send(outgoing_message.encode("utf-8"))
-        print("Peer signed off from network")
 
-        for p in registered_peers:
+        for i, p in enumerate(registered_peers):
             if (p.ipAddress == ip_address) and (p.portNumber == port_number):
-                del registered_peers[p]
+                print("Peer: %s signed off from network." %(p.machineID))
+                del registered_peers[i]
     #------------------------------------------------------------------------------------------------------------------#
 	#------------------------------------------ Recieves invalid input ------------------------------------------------#
     else:
