@@ -14,6 +14,7 @@ MACHINE_ID-MACHINE_KEY-IP_ADDRESS-PORT_NUMBER-COMMAND-MESSAGE
 import socket
 import threading
 import csv
+import time
 
 #----------------------------------------------------------------------------------------------------------------------#
 #--------------------------- These identifiers will be hard coded onto each machine -----------------------------------#
@@ -89,17 +90,49 @@ def makeserversocket(portNumber, backlog=5):
     print("binding peer server socket to port " + portNumber)
     print("Listening for connections...")
     return s
-# ---------------------------------------------------------------------------------------------------------------------#
-'''Function takes decoded string sent from connected socket, which it then parses out to obtain the sending peer's 
-machineID, key, ip address, port number, the command, and the message sent. For out purposes the only messages sent will
-be either empty strings, or a block to add to the blockchain. The function returns a tuple of the form:
-(machine_id, key, ip_address, port_number, command, message)'''
+#------------------- Schedule outgoing message to inform peer that it is now the "leader" -----------------------------#
+def choose_the_leader():
+    start_time = time.time()
+    print("Appoint Leader...")
+
+    i = 0
+    while True:
+
+        time.sleep(5.0)
+        length = len(registered_peers)
+
+        if i >= length:
+            i = 0
+
+        if length > 0:
+            outgoing_message = MESSAGE_HEADER +"|" + "LEAD" + "|" + ""
+
+            try:
+                #send message to node that it is the leader
+                sender = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sender.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            except socket.error as msg:
+                print(str(msg))
+
+            try:
+                sender.connect((registered_peers[i].ipAddress, int(registered_peers[i].portNumber)))
+            except socket.error as msg:
+                print(str(msg))
+
+            try:
+                sender.send(outgoing_message.encode("utf-8"))
+            except socket.error as msg:
+                print(str(msg))
+
+            sender.close()
+            i +=1
 #----------------------------------------------------------------------------------------------------------------------#
 # --------------------------------------------- Authentication Function -----------------------------------------------#
-
-'''Function takes the machineID and key that have been extracted from the parse_incoming_message function, and checks 
+'''
+Function takes the machineID and key that have been extracted from the parse_incoming_message function, and checks 
 the list of peers to make sure the connecting peer is authorized to connect. If it is the function returns true, if not
-returns false'''
+returns false
+'''
 
 def verify_incoming_peer(connection, machineID, key, ip_address, port_number):
 
@@ -264,18 +297,23 @@ read_peer_info("peer_info_port.csv")
 #-- Create server socket to listen for connections --#
 server_socket = makeserversocket(PORT_NUMBER)
 
+t1 = threading.Thread(target=choose_the_leader,)
+t1.daemon = True
+t1.start()
+
 #-- Infinite loop listens for peers connecting --#
 while True:
-	
+    print("Entering infinite loop")
+
     peer, address = server_socket.accept()
     print("Connection from: %s" %(peer))
 
     #handle_incoming_peer(peer)
 
     #-- Create new thread to handle verification function --#
-    t = threading.Thread(target=handle_incoming_peer, args=(peer,))
-    t.daemon = True
-    t.start()
+    t2 = threading.Thread(target=handle_incoming_peer, args=(peer,))
+    t2.daemon = True
+    t2.start()
 
 #----------------------------------------------------------------------------------------------------------------------#
 
