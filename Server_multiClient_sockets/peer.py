@@ -201,43 +201,18 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     # --------------------------------------- Peer receives list of peers info ----------------------------------------#
     if command == "PEER":
 
-        message_length = len(incoming_message)
+        information = incoming_message.split()
+        peer_info = ['', '', '', '']
 
-        index = 0
-        while index < message_length:
-
-            # -----------  MachineID ---------------#
-            while incoming_message[index] != " ":
-                machineID += incoming_message[index]
-                index += 1
-            # ---------------------------------------#
-            index += 1
-            # --------------- Key ------------------#
-            while incoming_message[index] != " ":
-                key += incoming_message[index]
-                index += 1
-            # ---------------------------------------#
-            index += 1
-            # ------------- ipAddress ---------------#
-            while incoming_message[index] != " ":
-                ipAddress += incoming_message[index]
-                index += 1
-            # ---------------------------------------#
-            index += 1
-            # ------------ portNumber ---------------#
-            while incoming_message[index] != " ":
-                port += incoming_message[index]
-                index += 1
-            # ---------------------------------------#
-            index += 1
-            # -- Add peer info to list of peers --#
-            peers.append(Peer_Info(machineID, key, ipAddress, port))
-
-            # -- clear each variable so it can be reused --#
-            machineID = ""
-            key = ""
-            ipAddress = ""
-            port = ""
+        j=0
+        i=0
+        while i < len(information):
+            peer_info[j] = information[i]
+            i+=1
+            j+=1
+            if j == 3:
+                peers.append(Peer_Info(peer_info[0], peer_info[1], peer_info[2], peer_info[3]))
+                j = 0
 
     # ------------------------------------------------------------------------------------------------------------------#
     # -------------------  Peer receives command to send copy of registered peer list ---------------------------------#
@@ -256,55 +231,32 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     # ------------------------------------------------------------------------------------------------------------------#
     # -----------------------------------  Peer receive list of registered peers  -------------------------------------#
     elif command == "REPL":
+        # machineID, key, ipAddress, port
+        information = incoming_message.split()
+        peer_info = ['', '', '', '']
 
-        message_length = len(incoming_message)
-        index = 0
-
-        while index < message_length:
-
-            # -------------- MachineID ----------------#
-            while incoming_message[index] != " ":
-                machineID += incoming_message[index]
-                index += 1
-            # ------------------------------------------#
-            index += 1
-            # ------------------ Key -------------------#
-            while incoming_message[index] != " ":
-                key += incoming_message[index]
-                index += 1
-            # ------------------------------------------#
-            index += 1
-            # --------------- ipAddress ----------------#
-            while incoming_message[index] != " ":
-                ipAddress += incoming_message[index]
-                index += 1
-            # ------------------------------------------#
-            index += 1
-            # --------------- portNumber ---------------#
-            while incoming_message[index] != " ":
-                port += incoming_message[index]
-                index += 1
-            # ------------------------------------------#
-            index += 1
-
-            # ---- Add peer to list of registered peers if not already there ---#
-            found = False
-            for p in registered_peers:
-                if (p.machineID == machineID) and (p.privateKey == key):
-                    p.ipAddress = ipAddress
-                    p.portNumber = port
-                    found = True
-                    break
-            # ------------------------------------------------------------------#
-            if (found == False) and (machineID != MACHINE_ID):
-                registered_peers.append(Peer_Info(machineID, key, ipAddress, port))
-
-            # -- clear variables to reuse --#
-            machineID = ""
-            key = ""
-            ipAddress = ""
-            port = ""
-
+        j=0
+        i=0
+        while i < len(information):
+            peer_info[j] = information[i]
+            i+=1
+            j+=1
+            if j == 3:
+                j = 0
+                '''
+                # ---- Add peer to list of registered peers if not already there ---#
+                found = False
+                for p in registered_peers:
+                    if (p.machineID == machineID) and (p.privateKey == key):
+                        p.ipAddress = ipAddress
+                        p.portNumber = port
+                        found = True
+                        break
+                    # ------------------------------------------------------------------#
+                    if (found == False) and (machineID != MACHINE_ID):
+                    '''
+                registered_peers.append(Peer_Info(peer_info[0], peer_info[1], peer_info[2], peer_info[3]))
+                        
     # ---------------------------------------------------------------------------------------------------------------#
     # ------------ Peer receive request from another node to join it's list of registered peers ---------------------#
     elif command == "JOIN":
@@ -662,7 +614,9 @@ def MAIN():
         print("Ballot: ", blockchain.chain[index].data)
         print("Current Hash: ", blockchain.chain[index].hash)
         print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
-
+        
+        message = (str)( blockchain.chain[index].machine_id) + '%' +(str)(blockchain.chain[index].timestamp) + '%' +(str)(blockchain.chain[index].data)
+        + '%' +(str)(blockchain.chain[index].hash) + '%' + (str)(blockchain.chain[index].previous_hash, "\n")
         outgoing_command_handler('ADDB', 'BLOCK INFORMATION')
         proceed()
 
