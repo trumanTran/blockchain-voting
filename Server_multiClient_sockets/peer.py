@@ -13,13 +13,17 @@ MACHINE_ID-MACHINE_KEY-IP_ADDRESS-PORT_NUMBER-COMMAND-MESSAGE
 '''
 import socket
 import threading
+import sched, time
+
 #----------------------------------------------------------------------------------------------------------------------#
 #----------------------------- These identifiers will be hard coded onto each machine ---------------------------------#
 MACHINE_ID = "Machine001"
 MACHINE_KEY = "12345"
+LEADER = False
 
 #MAX_NUMBER_OF PEERS = 10
 
+#HOST = "146.95.43.141"
 HOST = "localhost"
 SERVER_PORT = "999"
 SERVER_MACHINE_ID = "Server0001"
@@ -332,6 +336,12 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     elif command == "DONE":
         print("Confirmed disconnection from peer")
     #------------------------------------------------------------------------------------------------------------------#
+    elif command == "LEAD":
+        LEADER = True
+        print("%s is now the leader" %(MACHINE_ID))
+
+        time.sleep(3.0)
+        LEADER = False
     #----------------------------- Peer receives unrecognized command to close socket ------------------------------#
     else:
         outgoing_message = MESSAGE_HEADER + "|" + "ERRO" + "|" + incoming_message
