@@ -13,13 +13,17 @@ MACHINE_ID-MACHINE_KEY-IP_ADDRESS-PORT_NUMBER-COMMAND-MESSAGE
 '''
 import socket
 import threading
+import sched, time
+
 #----------------------------------------------------------------------------------------------------------------------#
 #----------------------------- These identifiers will be hard coded onto each machine ---------------------------------#
 MACHINE_ID = "Machine002"
 MACHINE_KEY = "23456"
+LEADER = False
 
 #MAX_NUMBER_OF PEERS = 10
 
+#HOST = "146.95.43.141"
 HOST = "localhost"
 SERVER_PORT = "999"
 SERVER_MACHINE_ID = "Server0001"
@@ -299,18 +303,6 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
 
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
-        
-    ###>>>>>File Receiver<<<<<###
-    #receives a file in the following format: Command yadda yadda, then a filename as a string and then a whitespace,
-    #then the actual file contents itself, all as bytestreams.
-    elif command == "FILE":
-        FileData = incoming_message.split()
-        print("Accepting file " + FileData[0] + ".")
-        FileWriter = open(FileData[0], 'wb')
-        FileWriter.write(FileData[1])
-        FileWriter.close() #Done writing file.
-        print("File saved as " + FileData[0] + ".")
-    
     # ---------------------------------------------------------------------------------------------------------------#
     # -------- Peer reveives confirmation that other peer has received new block and added it to blockchain ---------#
 
@@ -337,7 +329,13 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     # ------------------ Peer receives confirmation that it has disconnected from other peer ---------------------------#
     elif command == "DONE":
         print("Confirmed disconnection from peer")
-    # ------------------------------------------------------------------------------------------------------------------#
+    # -----------------------------------------------------------------------------------------------------------------#
+    elif command == "LEAD":
+        LEADER = True
+        print("%s is now the leader" %(MACHINE_ID))
+
+        time.sleep(3.0)
+        LEADER = False
     # ----------------------------- Peer receives unrecognized command to close socket ------------------------------#
     else:
         outgoing_message = MESSAGE_HEADER + "|" + "ERRO" + "|" + incoming_message
@@ -352,7 +350,7 @@ def outgoing_command_handler(command, message):
 
     global registered_peers
 
-    if command == ("ADDB" || "FILE"):
+    if command == "ADDB":
         for p in registered_peers:
             sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # -- allows us to reuse socket immediately after it is closed --#
@@ -387,7 +385,6 @@ def outgoing_command_handler(command, message):
 
     elif command == "LIST REGPEERS":
         list(registered_peers)
-        
         # -------------------------- Invalid Command Given ---------------------------------#
     else:
         print("invalid command dummy!")
@@ -479,17 +476,6 @@ def start_peer():
             sending_socket.close()
         except:
             print("failed to handle outgoing peer")
-###>>>>>--------------------------------------------- Send File --------------------------------------------------<<<<<#
-def Send_File(Filename):
-    #Takes filename, opens it, and sends it via fixed implementation.
-    try:
-        FileLoad = open(Filename, "rb")
-        FileBytes = FileLoad.read()
-        outgoing_command_handler("FILE", FileBytes)
-        FileLoad.close()
-    except:
-        print("Unable to open " + Filename + ".")
-        pass
 
 #----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------- Loop to Listen for connections --------------------------------------------#
