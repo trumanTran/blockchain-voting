@@ -1,5 +1,3 @@
-#----------------------------------------------------------------------------------------------------------------------#
-#----------------------------- These identifiers will be hard coded onto each machine ---------------------------------#
 '''
 The header for each byte stream sent and received is of the following format:
 XXXXXXXXXX YYYYY Z* A* BBBB C*
@@ -11,6 +9,7 @@ XXXXXXXXXX YYYYY Z* A* BBBB C*
 - C represents the any number of characters making up the message sent
 MACHINE_ID-MACHINE_KEY-IP_ADDRESS-PORT_NUMBER-COMMAND-MESSAGE
 '''
+import sched, time
 import socket
 import threading
 from tkinter import *
@@ -20,7 +19,9 @@ import VotingContainer
 import SQLVoterTable
 import blockchain
 import os
-#------------------------------------------------variables for GUI------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------#
+#-------------------------------------------GUI Variables--------------------------------------------------------------#
 ballot = gui_header.LoadCSV('Ballot.csv')
 votes = []
 WriteInEntries = []
@@ -29,21 +30,22 @@ all_frames = []
 compiledBallot = []
 frameCount = 1
 block = VotingContainer.Vote
-stationId = 1234 #Station ID
+stationId = 1234  # Station ID
 blockToAdd = None
+
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------- These identifiers will be hard coded onto each machine ---------------------------------#
-MACHINE_ID = "Machine001"
-MACHINE_KEY = "12345"
-
+MACHINE_ID = "Machine002"
+MACHINE_KEY = "23456"
+LEADER = False
 # MAX_NUMBER_OF PEERS = 10
-
-HOST = "localhost"
+# HOST = "146.95.43.141"
+HOST = '146.95.43.141'
 SERVER_PORT = "999"
 SERVER_MACHINE_ID = "Server0001"
 SERVER_KEY = "10101"
 
-IP_ADDRESS = socket.gethostbyname(socket.getfqdn())
+IP_ADDRESS = '146.95.43.141'#socket.gethostbyname(socket.getfqdn())
 PORT_NUMBER = "1000"
 
 # -- This message header will be used to send every message for verification purposes --#
@@ -57,10 +59,6 @@ block_chain = []
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------- Lock to prevent race conditions --------------------------------------------#
 lock = threading.Lock()
-
-
-# ----------------------------------------------------------------------------------------------------------------------#
-# ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------------------------------------------------------------------------------------------------#
 # ------------------------------------------ Class for holding client info ---------------------------------------------#
 class Peer_Info:
@@ -96,20 +94,18 @@ def makeserversocket(portNumber, backlog=5):
     print("Listening for connections...")
     return s
 
-# ----------------------------------------------------------------------------------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
 # --------------------------------------------- Authentication Function -----------------------------------------------#
 
 '''Function takes the machineID and key that have been extracted from the parse_incoming_message function, and checks 
 the list of peers to make sure the connecting peer is authorized to connect. If it is the function returns true, if not
 returns false'''
-
-# ----------------------------------------------------------------------------------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
 def verify_incoming_peer(connection, machineID, key, ip_address, port_number):
     found_match = False
 
     print("Machine login info is: " + machineID + " " + key + "" + ip_address + "" + port_number)
     # -------------------------------------------------------------------------------------------------------------#
-
     # -------------- Loop through list of clients and see if a match with login info is found -------------------#
     for x in peers:
         # -- Client's machine id and private key match so it is confirmed to connect --#
@@ -128,8 +124,8 @@ def verify_incoming_peer(connection, machineID, key, ip_address, port_number):
             # -- Match found so update variable --#
             found_match = True
             break
-    # ------------------------------------------------------------------------------------------------------------#
-    # ------------------------------------------- Peer failed to connect to ----------------------------------------#
+    # -----------------------------------------------------------------------------------------------------------------#
+    # ------------------------------------------- Peer failed to connect to -------------------------------------------#
     if found_match is False:
         print("Peer failed to provide a valid machine name and/or key.")
         return False
@@ -137,20 +133,17 @@ def verify_incoming_peer(connection, machineID, key, ip_address, port_number):
     # -------------------------------------- Client successfully connected --------------------------------------------#
     else:
         already_exist = False
-
         # -- Add socket to list of connections --#
         for p in registered_peers:
             if p.machineID == machineID:
                 p.ipAddress = ip_address
                 p.portNumber = port_number
-
                 already_exist = True
                 break
         if already_exist is False:
             with lock:
                 registered_peers.append(Peer_Info(machineID, key, ip_address, port_number))
                 print("Added to list of registered peers.")
-
         return True
 
 # ---------------------------------------------------------------------------------------------------------------------#
@@ -158,63 +151,50 @@ def verify_incoming_peer(connection, machineID, key, ip_address, port_number):
 def handle_incoming_peer(connection):
     incoming_message = connection.recv(2048)
     incoming_message = incoming_message.decode()
-
     machine_id, key, ip_address, port_number, command, message = incoming_message.split("|", 6)
-
     # machine_id, key, ip_address, port_number, command, message = parse_incoming_message(incoming_message)
-
     if verify_incoming_peer(connection, machine_id, key, ip_address, port_number):
         print("peer verified, command: " + command)
-
         incoming_command_handler(connection, ip_address, port_number, command, message)
-
     else:
         print("Unverified attempt to connect at: %s" % (connection))
         outgoing_message = MESSAGE_HEADER + "|" + "ERRO" + "|" + ""
         connection.send(outgoing_message.encode("utf-8"))
 
 # ---------------------------------------------------------------------------------------------------------------------#
-# ----------------------------------------------------------------------------------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
 def handle_outgoing_peer(connection, command, message=""):
     outgoing_message = MESSAGE_HEADER + "|" + command + "|" + message
     connection.send(outgoing_message.encode("utf-8"))
-
     handle_incoming_peer(connection)
 
-# ----------------------------------------------------------------------------------------------------------------------#
-# ----------------------------------------------------------------------------------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
 # ------------------ Command Handler takes commands from peer and performs necessary operation ------------------------#
 
 def incoming_command_handler(connection, ip_address, port_number, command, incoming_message):
     global registered_peers
-
-    # ------------------------------------------------------------#
-    # -- used for populating the peer and registered peer lists --#
+    # -----------------------------------------------------------------#
+    # -- Variables for populating the peer and registered peer lists --#
     machineID = ""
     key = ""
     ipAddress = ""
     port = ""
-    # ------------------------------------------------------------#
-
-    outgoing_message = ""
-    # ------------------------------------------------------------------------------------------------------------------#
+    # -----------------------------------------------------------------------------------------------------------------#
     # --------------------------------------- Peer receives list of peers info ----------------------------------------#
     if command == "PEER":
-
-        information = incoming_message.split()
-        peer_info = ['', '', '', '']
-
-        j=0
-        i=0
-        while i < len(information):
-            peer_info[j] = information[i]
-            i+=1
+        info = ['','','','']
+        peers_information = incoming_message.strip()
+        j = 0
+        for i in peers_information:
+            info[j] = i
             j+=1
             if j == 3:
-                peers.append(Peer_Info(peer_info[0], peer_info[1], peer_info[2], peer_info[3]))
                 j = 0
+                peers.append(Peer_Info(info[0], info[1], info[2], info[3]))
+                #machineID, key, ipAddress, port
 
-    # ------------------------------------------------------------------------------------------------------------------#
+    # -----------------------------------------------------------------------------------------------------------------#
     # -------------------  Peer receives command to send copy of registered peer list ---------------------------------#
     elif command == "REGP":
 
@@ -228,23 +208,17 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
 
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
-    # ------------------------------------------------------------------------------------------------------------------#
+    # -----------------------------------------------------------------------------------------------------------------#
     # -----------------------------------  Peer receive list of registered peers  -------------------------------------#
     elif command == "REPL":
-        # machineID, key, ipAddress, port
-        information = incoming_message.split()
-        peer_info = ['', '', '', '']
-
-        j=0
-        i=0
-        while i < len(information):
-            peer_info[j] = information[i]
-            i+=1
-            j+=1
+        info = ['', '', '', '']
+        peers_information = incoming_message.strip()
+        j = 0
+        for i in peers_information:
+            info[j] = i
+            j += 1
             if j == 3:
                 j = 0
-                '''
-                # ---- Add peer to list of registered peers if not already there ---#
                 found = False
                 for p in registered_peers:
                     if (p.machineID == machineID) and (p.privateKey == key):
@@ -252,73 +226,69 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
                         p.portNumber = port
                         found = True
                         break
-                    # ------------------------------------------------------------------#
-                    if (found == False) and (machineID != MACHINE_ID):
-                    '''
-                registered_peers.append(Peer_Info(peer_info[0], peer_info[1], peer_info[2], peer_info[3]))
-                        
-    # ---------------------------------------------------------------------------------------------------------------#
-    # ------------ Peer receive request from another node to join it's list of registered peers ---------------------#
+                # ------------------------------------------------------------------#
+                if (found == False) and (machineID != MACHINE_ID):
+                    registered_peers.append(Peer_Info(info[0], info[1], info[2], info[3]))
+                    # machineID, key, ipAddress, port
+    # -----------------------------------------------------------------------------------------------------------------#
+    # ------------ Peer receive request from another node to join it's list of registered peers -----------------------#
     elif command == "JOIN":
         outgoing_message = MESSAGE_HEADER + "|" + "WELC" + "|" + incoming_message
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
-    # ---------------------------------------------------------------------------------------------------------------#
-    # ------------ Peer receives confirmation that it has joined list of registered peers for node ------------------#
+    # -----------------------------------------------------------------------------------------------------------------#
+    # ------------ Peer receives confirmation that it has joined list of registered peers for node --------------------#
     elif command == "WELC":
-        print("Succesfully joined list of registered peers for node at ip address: %s port number: %s" % (
-        ip_address, port_number))
-    # ---------------------------------------------------------------------------------------------------------------#
-    # ----------------------------- Peer receives command to update it's blockchain ---------------------------------#
+        print("Succesfully joined list of registered peers for node at ip address: %s port number: %s"
+              % (ip_address, port_number))
+    # -----------------------------------------------------------------------------------------------------------------#
+    # ----------------------------- Peer receives command to update it's blockchain -----------------------------------#
     elif command == "ADDB":
-
         print("Adding block to blockchain, sent from peer: %s " % (connection))
         block_chain.append(incoming_message)
-
         outgoing_message = MESSAGE_HEADER + "|" + "CONF" + "|" + incoming_message
-
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
-    # ---------------------------------------------------------------------------------------------------------------#
-    # -------- Peer reveives confirmation that other peer has received new block and added it to blockchain ---------#
-
+    # -----------------------------------------------------------------------------------------------------------------#
+    # -------- Peer reveives confirmation that other peer has received new block and added it to blockchain -----------#
     elif command == "CONF":
         print("Confirmation to add block to blockchain")
-
         block_chain.append(incoming_message)
         print("Block added: " + incoming_message)
-    # --------------------------------------------------------------------------------------------------------------#
-    # ------------ Peer receives error message indicating something went wrong durring communication ----------------#
+    # -----------------------------------------------------------------------------------------------------------------#
+    # ------------ Peer receives error message indicating something went wrong durring communication ------------------#
     elif command == "ERRO":
         print("error performing operation")
-    # ---------------------------------------------------------------------------------------------------------------#
-    # ------------------------------------------ Peer quits network -------------------------------------------------#
+    # -----------------------------------------------------------------------------------------------------------------#
+    # ------------------------------------------ Peer quits network ---------------------------------------------------#
     elif command == "QUIT":
         outgoing_message = MESSAGE_HEADER + "|" + "DONE" + "|" + incoming_message
         connection.send(outgoing_message.encode("utf-8"))
-
         for i, p in enumerate(registered_peers):
             if (p.ipAddress == ipAddress) and (p.portNumber == port_number):
                 print("Peer: %s signed off from network." % (p.machineID))
                 del registered_peers[i]
     # -----------------------------------------------------------------------------------------------------------------#
-    # ------------------ Peer receives confirmation that it has disconnected from other peer ---------------------------#
+    # ------------------ Peer receives confirmation that it has disconnected from other peer --------------------------#
     elif command == "DONE":
         print("Confirmed disconnection from peer")
-    # ------------------------------------------------------------------------------------------------------------------#
-    # ----------------------------- Peer receives unrecognized command to close socket ------------------------------#
+    # -----------------------------------------------------------------------------------------------------------------#
+    elif command == "LEAD":
+        LEADER = True
+        print("%s is now the SUPREME leader" % (MACHINE_ID))
+        time.sleep(3.0)
+        LEADER = False
+    # ----------------------------- Peer receives unrecognized command to close socket --------------------------------#
     else:
         outgoing_message = MESSAGE_HEADER + "|" + "ERRO" + "|" + incoming_message
-
         print(outgoing_message)
         connection.send(outgoing_message.encode("utf-8"))
-    # ---------------------------------------------------------------------------------------------------------------#
+    # -----------------------------------------------------------------------------------------------------------------#
 
-# ----------------------------------------------------------------------------------------------------------------------#
-# -------------------------------------------- Outgoing command handler ------------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
+# -------------------------------------------- Outgoing command handler -----------------------------------------------#
 def outgoing_command_handler(command, message):
     global registered_peers
-
     if command == "ADDB":
         for p in registered_peers:
             sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -359,9 +329,8 @@ def outgoing_command_handler(command, message):
         print("invalid command dummy!")
     # ----------------------------------------------------------------------------------#
 
-
-# ----------------------------------------------------------------------------------------------------------------------#
-# ------------------------------------------------ List peer info ------------------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
+# ------------------------------------------------ List peer info -----------------------------------------------------#
 def list(peer_list):
     if peer_list:
         for i in peer_list:
@@ -369,17 +338,15 @@ def list(peer_list):
     else:
         print("List is empty")
 
-
-# ----------------------------------------------------------------------------------------------------------------------#
-# ------------ Initilize Peer by connecting to server and requesting peer_info and registered_peer_info ----------------#
+# ---------------------------------------------------------------------------------------------------------------------#
+# ------------ Initilize Peer by connecting to server and requesting peer_info and registered_peer_info ---------------#
 def start_peer():
     peers.clear()
     registered_peers.clear()
 
-    # --------- add server info to list of peers to allow communication --------#
+    # ------------- add server info to list of peers to allow communication ------------#
     peers.append(Peer_Info(SERVER_MACHINE_ID, str(SERVER_KEY), "", ""))
-    # ---------------------------------------------------------------------------#
-
+    # ----------------------------------------------------------------------------------#
     # ------------------- Connect with server and get peer info ------------------------#
     command = "INIT"
     message = ""
@@ -391,7 +358,6 @@ def start_peer():
 
     except socket.error as msg:
         print("Failed to connect to server. " + str(msg))
-
         host_manual = input("IP Address-> ")
         port_number_manual = input("Port Number-> ")
 
@@ -448,68 +414,66 @@ def start_peer():
         except:
             print("failed to handle outgoing peer")
 
-
-# ----------------------------------------------------------------------------------------------------------------------#
-# ----------------------------------------- Loop to Listen for connections ---------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------- Loop to Listen for connections --------------------------------------------#
 def listen_loop(server_socket):
     while True:
         try:
             peer, address = server_socket.accept()
             print("Connection from: %s" % (peer))
-
             # handle_incoming_peer(peer)
-
             # -- Create new thread to handle verification function --#
             t = threading.Thread(target=handle_incoming_peer, args=(peer,))
             t.daemon = True
             t.start()
-
         except:
             pass
 
     server_socket.close()
 
-# ----------------------------------------------------------------------------------------------------------------------#
-# ----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
+# ----------------------- Loop to take in votes, then request to update the blockchain --------------------------------#
 def MAIN():
     start_peer()
     server_socket = makeserversocket(int(PORT_NUMBER))
     t = threading.Thread(target=listen_loop, args=(server_socket,))
     t.daemon = True
     t.start()
-# ---------------------------------------------------------------------------------------------------------------------#
-#----------------------------------------------------GUI---------------------------------------------------------------#
 
-    # ---------------------------------------------------------------------------------------------------------------------
-    # ------------------------------------------- Initialize Local Tables Once --------------------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+# -------------------------------- Loop keeps running as long as peer is active ---------------------------------------#
+    # -----------------------------------------------------------------------------------------------------------------#
+    # -------------------------------------------------GUI-------------------------------------------------------------#
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # ----------------------------------------- Initialize Local Tables Once -------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     # SQLVoterTable.create_voter_reg()
     # SQLVoterTable.CSV_Load_Voters('/Users/admin/Desktop/blockchain-voting-master/dynamicGUI/NamesAddresses.csv')
-    # ---------------------------------------------------------------------------------------------------------------------
-    # ---------------------------------------------- Initialize Blockchain ------------------------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------- Initialize Blockchain ------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     # during actual initialization, genesis_block will be set equal to the genesis block given by central server
     # central server will be the one to call create_genesis_block() and send that to all nodes
     genesisBlock = blockchain.create_genesis_block()
     # machine will create its own local blockchain utilizing the genesis block given
     blockchain.create_new_chain(genesisBlock)
-    # ---------------------------------------------------------------------------------------------------------------------
-    # ---------------------------------------------- Root Window declaration ----------------------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------- Root Window declaration ----------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     root = Tk()
     # root.attributes("-fullscreen", True)
     root.title("Voting Booth")
     root.config(width=600, height=600)
-    # ---------------------------------------------------------------------------------------------------------------------
-    # -------------------------------- create first frame, confirmation page, last frame ----------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # ----------------------------- create first frame, confirmation page, last frame ----------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     LoginFrame = Frame(root)
     confirmation_page = Frame(root)
     lastFrame = Frame(root)
 
-    # ---------------------------------------------------------------------------------------------------------------------
-    # -------------------------------------------- Local function definaitions --------------------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # ----------------------------------------- Local function definaitions --------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     def proceed():
         global frameCount
         if frameCount < len(all_frames) - 1:
@@ -523,9 +487,7 @@ def MAIN():
     def lessCheck(counter):
         if counter < limitations[frameCount - 2][0]:
             answer = tkinter.messagebox.askquestion("YOU ARE ABOUT TO OMIT YOUR VOTE(S)",
-                                                    "Are you sure you would like to omit " + (str)(
-                                                        limitations[frameCount - 2][
-                                                            0] - counter) + " vote(s) for this race?")
+                                                    "Are you sure you would like to omit " + (str)(limitations[frameCount - 2][0] - counter) + " vote(s) for this race?")
             if answer == 'yes':
                 WriteInEntries[len(WriteInEntries) - frameCount + 1].config(state='disabled')
                 return proceed()
@@ -605,7 +567,7 @@ def MAIN():
         # set blockToAdd to the proposed block containing the current voter's ballot
         blockToAdd = blockchain.next_block(stationId, currentBallot)
         # This is where we should first broadcast block or otherwise check to see if we accept block from another node
-        # For the time being, check whether previous hash of broadcast node is equal to latest block's current hash
+        #  For the time being, check whether previous hash of broadcast node is equal to latest block's current hash
         # Once ready, node will append block to local blockchain
         if (blockToAdd.previous_hash == blockchain.chain[index - 1].hash):
             blockchain.append_block(blockToAdd)
@@ -614,9 +576,10 @@ def MAIN():
         print("Ballot: ", blockchain.chain[index].data)
         print("Current Hash: ", blockchain.chain[index].hash)
         print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
-        
-        message = (str)( blockchain.chain[index].machine_id) + '%' +(str)(blockchain.chain[index].timestamp) + '%' +(str)(blockchain.chain[index].data)
-        + '%' +(str)(blockchain.chain[index].hash) + '%' + (str)(blockchain.chain[index].previous_hash, "\n")
+
+        message = (str)(blockchain.chain[index].machine_id) + '%' + (str)(blockchain.chain[index].timestamp) + '%' + \
+                  (str)(blockchain.chain[index].data) + '%' + (str)(blockchain.chain[index].hash) + '%' + \
+                  (str)(blockchain.chain[index].previous_hash)
         outgoing_command_handler('ADDB', 'BLOCK INFORMATION')
         proceed()
 
@@ -664,53 +627,54 @@ def MAIN():
             for j in range(1, len(i)):
                 del i[1]
         for entry in WriteInEntries:
-            var = IntVar(0)
-            gui_header.enable(entry, var, -1)
-
+            if entry.get() != '':
+                gui_header.enable(entry, IntVar(0), -1)
+                if entry.get() != '':
+                    gui_header.enable(entry, IntVar(0), -1)
         proceed()
 
     def validate():
         if SQLVoterTable.check_voter(nameInfo.get(), addressInfo.get()):
             proceed()
 
-    # ---------------------------------------------------------------------------------------------------------------------
-    # ---------------------------------------------------- login Frame ----------------------------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------- login Frame ----------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     LoginFrame_subFrame = Frame(LoginFrame)
     LoginFrame_subFrame.grid(column=1, row=1)
-    # ----- name and address labels -----
+    # ----- name and address labels ----- #
     name = Label(LoginFrame_subFrame, text="NAME", font=("", 12))
     address = Label(LoginFrame_subFrame, text="ADDRESS", font=("", 12))
     welcome = Label(LoginFrame, text="WELCOME", font=("", 18))
-    # ----- entry boxes -----
+    # ----- entry boxes ----- #
     nameInfo = Entry(LoginFrame_subFrame, font=("", 12))
     addressInfo = Entry(LoginFrame_subFrame, font=("", 12))
-    # ----- button definition -----
+    # ----- button definition ----- #
     submit = Button(LoginFrame, text="SUBMIT", command=validate, font=("", 14))
     submit.config(width=30, bg='gray80')
-    # ----- placement of widgets onto the first frame -----
+    # ----- placement of widgets onto the first frame ----- #
     welcome.grid(column=1, row=1, sticky=N)
     name.grid(row=0, column=0, sticky=E)
     address.grid(row=1, column=0, sticky=E)
     nameInfo.grid(row=0, column=1, sticky=EW)
     addressInfo.grid(row=1, column=1, sticky=EW)
     submit.grid(row=1, column=1, sticky=S)
-    # ---------------------------------------------------------------------------------------------------------------------
-    # ----------------------------------------------------- Last frame ----------------------------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # -------------------------------------------------- Last frame ----------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     lastFrame_SubFrame = Frame(lastFrame)
     lastFrame_SubFrame.grid(column=1, row=1)
     thanks = Label(lastFrame_SubFrame, text="THANK YOU FOR VOTING", font=("", 14))
     end = Button(lastFrame_SubFrame, text="FINISH", command=reset, font=("", 14))
-    # ---------------------------------------------------------------------------------------------------------------------
-    # ------------------------------------------------- Confirmation page -------------------------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------- Confirmation page -------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     confirmation_subframe = Frame(confirmation_page)
     confirmation_subframe.grid(column=1, row=1)
     confirm = Button(confirmation_subframe, text='CONFIRM', command=appendBlock)
     redo = Button(confirmation_subframe, text='CHANGE', command=changeVote)
     prompt = Label(confirmation_subframe, text='PLEASE CONFIRM', font=("", 14))
-    # ----- Scrollbar in case the entries in a ballot extend off screen -----
+    # ------- Scrollbar in case the entries in a ballot extend off screen ------- #
     myscrollbar = Scrollbar(confirmation_subframe, orient="vertical")
     canvas = Canvas(confirmation_subframe)
     canvas.configure(yscrollcommand=myscrollbar.set)
@@ -719,9 +683,9 @@ def MAIN():
     myscrollbar.pack(side="right", fill="y")
     canvas.create_window((250, 0), window=canvasFrame, anchor='n')
     canvas.bind("<Configure>", configureCanvas)
-    # ---------------------------------------------------------------------------------------------------------------------
-    # ------------------------------------------- Placement of wigits and frames ------------------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------- Placement of wigits and frames ------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     for i in [thanks, end, prompt, canvas]:
         i.pack()
     confirm.pack(side='right')
@@ -730,9 +694,9 @@ def MAIN():
         gui_header.configure(i)
         i.place(relx=0.5, rely=0.5, anchor="c", relwidth=1.0, relheight=1.0)  # add new frame to the window
         all_frames.append(i)
-    # ---------------------------------------------------------------------------------------------------------------------
-    # ---------------------------------- Dynamically create ballot based off ballot tuple ---------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # ------------------------------- Dynamically create ballot based off ballot tuple ---------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     for i in range(0, len(ballot)):
         ballot_entry = Frame(root)  # frame for all information regarding one race
         gui_header.configure(ballot_entry)
@@ -767,7 +731,7 @@ def MAIN():
                     rb = Radiobutton(candidateFrame, text=ballot[i][j].upper(), variable=votes[i][0], value=limit[1],
                                      font=("", 12),
                                      command=lambda e=WriteInEntries[i], v=votes[i][0], x=len(ballot[i]) - 2:
-                                     gui_header.enable(e, v, x))
+                                        gui_header.enable(e, v, x))
                     rb.grid(sticky='W', row=j - 1)
             wrb.configure(value=limit[1] + 1, command=lambda e=WriteInEntries[i], v=votes[i][0], x=limit[1]:
             gui_header.enable(e, v, x))
@@ -788,32 +752,30 @@ def MAIN():
             candidateArray.append(var)
             writeIn.grid(sticky='W', row=len(ballot[i]) - 1, padx=28)
             cb = Checkbutton(candidateFrame, variable=candidateArray[len(candidateArray) - 1], font=("", 12),
-                             command=lambda e=WriteInEntries[i], v=candidateArray[len(candidateArray) - 1], x=0:
+                                command=lambda e=WriteInEntries[i], v=candidateArray[len(candidateArray) - 1], x=0:
                              gui_header.enable(e, v, x))
             limit[1] += 1
             cb.grid(sticky='W', row=len(ballot[i]) - 1)
             votes.append(candidateArray)
         limitations.append(limit)
-    # ---------------------------------------------------------------------------------------------------------------------
-    # ------------------------------------ Populate confirmation list with blank space ------------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    # --------------------------------- Populate confirmation list with blank space ------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     listRowNumber = len(ballot)
     for i in range(len(limitations)):
         listRowNumber = listRowNumber + limitations[i][0]
     gui_header.fillConfirmation(listRowNumber, [], canvasFrame)
-    # ---------------------------------------------------------------------------------------------------------------------
-    # -------------------------------------- Flip around lists to match output of GUI -------------------------------------
-    # ---------------------------------------------------------------------------------------------------------------------
-    limitations.reverse()
-    votes.reverse()
-    ballot.reverse()
-    compiledBallot.reverse()
+    # ------------------------------------------------------------------------------------------------------------------
+    # ----------------------------------- Flip around lists to match output of GUI -------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
+    for i in [limitations, votes, ballot, compiledBallot]:
+        i.reverse()
     LoginFrame.tkraise()
     root.mainloop()
     # ---------- Send Quit Message ---------- #
-    outgoing_command_handler('QUIT', 'whatever')
-#----------------------------------------------------------------------------------------------------------------------#
-#----------------------------------------------------------------------------------------------------------------------#
-#------------------------------------------------ Main body of program ------------------------------------------------#
+    outgoing_command_handler('QUIT', '')
+    # -----------------------------------------------------------------------------------------------------------------#
+# ---------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------- MAIN CALL -----------------------------------------------------#
 
 MAIN()
