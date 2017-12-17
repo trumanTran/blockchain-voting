@@ -2,7 +2,10 @@ import socket
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
-import pickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 from Crypto import Random
 
