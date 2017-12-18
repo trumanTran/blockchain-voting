@@ -191,44 +191,16 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     # ------------------------------------------------------------------------------------------------------------------#
     # --------------------------------------- Peer receives list of peers info ----------------------------------------#
     if command == "PEER":
-
-        message_length = len(incoming_message)
-
-        index = 0
-        while index < message_length:
-
-            # -----------  MachineID ---------------#
-            while incoming_message[index] != " ":
-                machineID += incoming_message[index]
-                index += 1
-            # ---------------------------------------#
-            index += 1
-            # --------------- Key ------------------#
-            while incoming_message[index] != " ":
-                key += incoming_message[index]
-                index += 1
-            # ---------------------------------------#
-            index += 1
-            # ------------- ipAddress ---------------#
-            while incoming_message[index] != " ":
-                ipAddress += incoming_message[index]
-                index += 1
-            # ---------------------------------------#
-            index += 1
-            # ------------ portNumber ---------------#
-            while incoming_message[index] != " ":
-                port += incoming_message[index]
-                index += 1
-            # ---------------------------------------#
-            index += 1
-            # -- Add peer info to list of peers --#
-            peers.append(Peer_Info(machineID, key, ipAddress, port))
-
-            # -- clear each variable so it can be reused --#
-            machineID = ""
-            key = ""
-            ipAddress = ""
-            port = ""
+        info = ['','','','']
+        peers_information = incoming_message.strip()
+        j = 0
+        for i in peers_information:
+            info[j] = i
+            j+=1
+            if j == 3:
+                j = 0
+                peers.append(Peer_Info(info[0], info[1], info[2], info[3]))
+                #machineID, key, ipAddress, port
 
     # ------------------------------------------------------------------------------------------------------------------#
     # -------------------  Peer receives command to send copy of registered peer list ---------------------------------#
@@ -246,55 +218,17 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
         connection.send(outgoing_message.encode("utf-8"))
     # ------------------------------------------------------------------------------------------------------------------#
     # -----------------------------------  Peer receive list of registered peers  -------------------------------------#
-    elif command == "REPL":
-
-        message_length = len(incoming_message)
-        index = 0
-
-        while index < message_length:
-
-            # -------------- MachineID ----------------#
-            while incoming_message[index] != " ":
-                machineID += incoming_message[index]
-                index += 1
-            # ------------------------------------------#
-            index += 1
-            # ------------------ Key -------------------#
-            while incoming_message[index] != " ":
-                key += incoming_message[index]
-                index += 1
-            # ------------------------------------------#
-            index += 1
-            # --------------- ipAddress ----------------#
-            while incoming_message[index] != " ":
-                ipAddress += incoming_message[index]
-                index += 1
-            # ------------------------------------------#
-            index += 1
-            # --------------- portNumber ---------------#
-            while incoming_message[index] != " ":
-                port += incoming_message[index]
-                index += 1
-            # ------------------------------------------#
-            index += 1
-
-            # ---- Add peer to list of registered peers if not already there ---#
-            found = False
-            for p in registered_peers:
-                if (p.machineID == machineID) and (p.privateKey == key):
-                    p.ipAddress = ipAddress
-                    p.portNumber = port
-                    found = True
-                    break
-            # ------------------------------------------------------------------#
-            if (found == False) and (machineID != MACHINE_ID):
-                registered_peers.append(Peer_Info(machineID, key, ipAddress, port))
-
-            # -- clear variables to reuse --#
-            machineID = ""
-            key = ""
-            ipAddress = ""
-            port = ""
+    if command == "PEER":
+        info = ['','','','']
+        peers_information = incoming_message.strip()
+        j = 0
+        for i in peers_information:
+            info[j] = i
+            j+=1
+            if j == 3:
+                j = 0
+                peers.append(Peer_Info(info[0], info[1], info[2], info[3]))
+                #machineID, key, ipAddress, port
 
     # ---------------------------------------------------------------------------------------------------------------#
     # ------------ Peer receive request from another node to join it's list of registered peers ---------------------#
