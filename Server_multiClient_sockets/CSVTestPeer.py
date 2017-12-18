@@ -473,6 +473,21 @@ def CSV_load_info(filename):
     global PORT_NUMBER
     PORT_NUMBER = ''.join(somelist[7])
 
+def broadcast():
+    global ballotQueue
+    index = len(blockchain.chain)
+    while LEADER and not ballotQueue.empty():
+        queuedData = ballotQueue.get()
+        blockToAdd = blockchain.next_block(stationId, queuedData)
+        if (blockToAdd.previous_hash == blockchain.chain[index - 1].hash):
+            blockchain.append_block(blockToAdd)
+        print("Machine ID: ", blockchain.chain[index].machine_id)
+        print("Time: ", blockchain.chain[index].timestamp)
+        print("Ballot: ", blockchain.chain[index].data)
+        print("Current Hash: ", blockchain.chain[index].hash)
+        print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
+        pickledBlock = pickle.dumps(blockToAdd)
+        outgoing_command_handler('ADDB', blockToAdd)
 
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
@@ -484,6 +499,10 @@ def MAIN():
     t = threading.Thread(target=listen_loop, args=(server_socket,))
     t.daemon = True
     t.start()
+	
+    b = threading.Thread(target=broadcast, args=())
+    b.daemon = True
+    b.start()
     CSV_load_info("NodeServInfo.csv")
     # ----------------------------- Loop keeps running as long as peer is active ---------------------------------------#
     while True:
