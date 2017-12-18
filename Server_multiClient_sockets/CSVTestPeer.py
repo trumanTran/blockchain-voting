@@ -12,7 +12,13 @@ MACHINE_ID-MACHINE_KEY-IP_ADDRESS-PORT_NUMBER-COMMAND-MESSAGE
 import socket
 import threading
 import sched, time
+import queue
+import blockchain
 import csv
+try:
+	import cPickle as pickle
+except:
+	import pickle
 
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------- These identifiers will be hard coded onto each machine ---------------------------------#
