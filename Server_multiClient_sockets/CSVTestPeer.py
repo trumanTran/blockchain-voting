@@ -29,7 +29,7 @@ SERVER_MACHINE_ID = "Server0001"
 SERVER_KEY = "10101"
 
 IP_ADDRESS = socket.gethostbyname(socket.getfqdn('localhost'))
-PORT_NUMBER = "1000"
+PORT_NUMBER = "999"
 
 # -- This message header will be used to send every message for verification purposes --#
 MESSAGE_HEADER = MACHINE_ID + "|" + MACHINE_KEY + "|" + IP_ADDRESS + "|" + PORT_NUMBER
