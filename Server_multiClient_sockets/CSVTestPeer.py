@@ -12,13 +12,11 @@ MACHINE_ID-MACHINE_KEY-IP_ADDRESS-PORT_NUMBER-COMMAND-MESSAGE
 import socket
 import threading
 import sched, time
-import queue
-import blockchain
 import csv
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import blockchain
+import queue
+import pickle
+
 
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------- These identifiers will be hard coded onto each machine ---------------------------------#
@@ -36,6 +34,8 @@ SERVER_KEY = "10101"
 
 IP_ADDRESS = socket.gethostbyname(socket.getfqdn('localhost'))
 PORT_NUMBER = "999"
+
+stationId = 5432
 
 # -- This message header will be used to send every message for verification purposes --#
 MESSAGE_HEADER = MACHINE_ID + "|" + MACHINE_KEY + "|" + IP_ADDRESS + "|" + PORT_NUMBER
@@ -480,20 +480,22 @@ def CSV_load_info(filename):
     PORT_NUMBER = ''.join(somelist[7])
 
 def broadcast():
-    global ballotQueue
-    index = len(blockchain.chain)
-    while LEADER and not ballotQueue.empty():
-        queuedData = ballotQueue.get()
-        blockToAdd = blockchain.next_block(stationId, queuedData)
-        if (blockToAdd.previous_hash == blockchain.chain[index - 1].hash):
-            blockchain.append_block(blockToAdd)
-        print("Machine ID: ", blockchain.chain[index].machine_id)
-        print("Time: ", blockchain.chain[index].timestamp)
-        print("Ballot: ", blockchain.chain[index].data)
-        print("Current Hash: ", blockchain.chain[index].hash)
-        print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
-        pickledBlock = pickle.dumps(blockToAdd)
-        outgoing_command_handler('ADDB', blockToAdd)
+    #global stationId
+    #global ballotQueue
+    #index = len(blockchain.chain)
+    while LEADER:
+        message = "message"
+        #queuedData = ballotQueue.get()
+        #blockToAdd = blockchain.next_block(stationId, queuedData)
+        #if (blockToAdd.previous_hash == blockchain.chain[index - 1].hash):
+        #    blockchain.append_block(blockToAdd)
+        #print("Machine ID: ", blockchain.chain[index].machine_id)
+        #print("Time: ", blockchain.chain[index].timestamp)
+        #print("Ballot: ", blockchain.chain[index].data)
+        #print("Current Hash: ", blockchain.chain[index].hash)
+        #print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
+        #pickledBlock = pickle.dumps(blockToAdd)
+        outgoing_command_handler('ADDB', message)
 
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
