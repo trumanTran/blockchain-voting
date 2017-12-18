@@ -1,6 +1,6 @@
 import os
 import sys
-
+#Randomly thrown together by John.
 '''this is a container for the voting data. Hashing is not relevant to us at the moment.
 the container should have an internal container containing their votes.
 it should also have an equal and separate container that holds the politicians or whatever being voted for have their names listed.
