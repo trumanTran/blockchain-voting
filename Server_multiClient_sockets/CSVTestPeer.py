@@ -510,21 +510,21 @@ def CSV_load_info(filename):
         reader = csv.reader(f)
         somelist = list(reader)  # This actually loads the whole csv file.
     global MACHINE_ID
-    MACHINE_ID = (str)(somelist[0])
+    MACHINE_ID = ''.join(somelist[0])
     global MACHINE_KEY
-    MACHINE_KEY = (str)(somelist[1])
+    MACHINE_KEY = ''.join(somelist[1])
     global HOST
-    HOST = (str)(somelist[2])
+    HOST = ''.join(somelist[2])
     global SERVER_PORT
-    SERVER_PORT = (str)(somelist[3])
+    SERVER_PORT = ''.join(somelist[3])
     global SERVER_MACHINE_ID
-    SERVER_MACHINE_ID = (str)(somelist[4])
+    SERVER_MACHINE_ID = ''.join(somelist[4])
     global SERVER_KEY
-    SERVER_KEY = (str)(somelist[5])
+    SERVER_KEY = ''.join(somelist[5])
     global IP_ADDRESS
-    IP_ADDRESS = (str)(somelist[6])
+    IP_ADDRESS = ''.join(somelist[6])
     global PORT_NUMBER
-    PORT_NUMBER = (str)(somelist[7])
+    PORT_NUMBER = ''.join(somelist[7])
 
 #----------------------------------------------------------------------------------------------------------------------#
 #----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
