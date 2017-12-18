@@ -24,12 +24,12 @@ LEADER = False
 #MAX_NUMBER_OF PEERS = 10
 
 #HOST = "146.95.43.141"
-HOST = "localhost"
+HOST = "146.95.43.141"
 SERVER_PORT = "999"
 SERVER_MACHINE_ID = "Server0001"
 SERVER_KEY = "10101"
 
-IP_ADDRESS = socket.gethostbyname(socket.getfqdn())
+IP_ADDRESS = "146.95.188.102"# socket.gethostbyname(socket.getfqdn())
 PORT_NUMBER = "1000"
 
 #-- This message header will be used to send every message for verification purposes --#
@@ -179,17 +179,17 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     ipAddress = ""
     port = ""
     #------------------------------------------------------------#
-	
+
     outgoing_message = ""
     #------------------------------------------------------------------------------------------------------------------#
     # --------------------------------------- Peer receives list of peers info ----------------------------------------#
     if command == "PEER":
 
         message_length = len(incoming_message)
-        
+
         index = 0
         while index < message_length:
-		
+
             # -----------  MachineID ---------------#
             while incoming_message[index] != " ":
                 machineID += incoming_message[index]
@@ -320,7 +320,7 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
     # --------------------------------------------------------------------------------------------------------------#
 	#------------ Peer receives error message indicating something went wrong durring communication ----------------#
     elif command == "ERRO":
-        print("error performing operation")
+        print("error performing operation %s" %(ip_address))
     #---------------------------------------------------------------------------------------------------------------#
     # ------------------------------------------ Peer quits network -------------------------------------------------#
     elif command == "QUIT":
@@ -337,10 +337,11 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
         print("Confirmed disconnection from peer")
     #------------------------------------------------------------------------------------------------------------------#
     elif command == "LEAD":
+        global LEADER
         LEADER = True
         print("%s is now the leader" %(MACHINE_ID))
 
-        time.sleep(3.0)
+        time.sleep(10.0)
         LEADER = False
     #----------------------------- Peer receives unrecognized command to close socket ------------------------------#
     else:
@@ -356,7 +357,7 @@ def outgoing_command_handler(command, message):
     global registered_peers
 
     if command == "ADDB":
-        for p in registered_peers:
+        for i,p in enumerate(registered_peers):
             sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # -- allows us to reuse socket immediately after it is closed --#
             sending_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -368,7 +369,7 @@ def outgoing_command_handler(command, message):
 
             except socket.error as e:
                 print(str(e))
-                del registered_peers[p]
+                del registered_peers[i]
 
         # ----------------------------------------------------------------------------------#
         # ---------------------------------- Quit Program ----------------------------------#
@@ -502,6 +503,13 @@ def listen_loop(server_socket):
             pass
 
     server_socket.close()
+
+def broadcast():
+    while True:
+        if LEADER:
+            message = "Jesse Was Here"
+            outgoing_command_handler('ADDB', message)
+
 #----------------------------------------------------------------------------------------------------------------------#
 #----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
 def MAIN():
@@ -513,6 +521,10 @@ def MAIN():
     t = threading.Thread(target=listen_loop, args=(server_socket,))
     t.daemon = True
     t.start()
+
+    b = threading.Thread(target=broadcast,)
+    b.daemon = True
+    b.start()
 
     #----------------------------- Loop keeps running as long as peer is active ---------------------------------------#
     while True:
