@@ -13,26 +13,26 @@ import socket
 import threading
 import sched, time
 import csv
-import blockchain
+#import blockchain
 import queue
 import pickle
 
 
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------- These identifiers will be hard coded onto each machine ---------------------------------#
-MACHINE_ID = "Machine001"
-MACHINE_KEY = "12345"
+MACHINE_ID = "Machine002"
+MACHINE_KEY = "23456"
 LEADER = False
 
 # MAX_NUMBER_OF PEERS = 10
 
 # HOST = "146.95.43.141"
-HOST = "localhost"
+HOST = "146.95.43.141"
 SERVER_PORT = "999"
 SERVER_MACHINE_ID = "Server0001"
 SERVER_KEY = "10101"
 
-IP_ADDRESS = socket.gethostbyname(socket.getfqdn('localhost'))
+IP_ADDRESS = "146.95.41.248" #socket.gethostbyname(socket.getfqdn('localhost'))
 PORT_NUMBER = "999"
 
 stationId = 5432
@@ -286,9 +286,12 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
         print("Confirmed disconnection from peer")
     # ------------------------------------------------------------------------------------------------------------------#
     elif command == "LEAD":
+        global LEADER
         LEADER = True
         print("%s is now the leader" % (MACHINE_ID))
-
+        #b = threading.Thread(target=broadcast, args=())
+        #b.daemon = True
+        #b.start()
         time.sleep(3.0)
         LEADER = False
     # ----------------------------- Peer receives unrecognized command to close socket ------------------------------#
@@ -304,13 +307,12 @@ def incoming_command_handler(connection, ip_address, port_number, command, incom
 # -------------------------------------------- Outgoing command handler ------------------------------------------------#
 def outgoing_command_handler(command, message):
     global registered_peers
-
+    global LEADER
     if command == "ADDB":
         for p in registered_peers:
             sending_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # -- allows us to reuse socket immediately after it is closed --#
             sending_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
             try:
                 sending_socket.connect((p.ipAddress, int(p.portNumber)))
                 handle_outgoing_peer(sending_socket, command, message)
@@ -483,19 +485,22 @@ def broadcast():
     #global stationId
     #global ballotQueue
     #index = len(blockchain.chain)
-    while LEADER:
-        message = "message"
-        #queuedData = ballotQueue.get()
-        #blockToAdd = blockchain.next_block(stationId, queuedData)
-        #if (blockToAdd.previous_hash == blockchain.chain[index - 1].hash):
-        #    blockchain.append_block(blockToAdd)
-        #print("Machine ID: ", blockchain.chain[index].machine_id)
-        #print("Time: ", blockchain.chain[index].timestamp)
-        #print("Ballot: ", blockchain.chain[index].data)
-        #print("Current Hash: ", blockchain.chain[index].hash)
-        #print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
-        #pickledBlock = pickle.dumps(blockToAdd)
-        outgoing_command_handler('ADDB', message)
+    print('Help')
+    while True:
+        if LEADER:
+            message = "Truman Was Here"
+            print("Goddamn it")
+            #queuedData = ballotQueue.get()
+            #blockToAdd = blockchain.next_block(stationId, queuedData)
+            #if (blockToAdd.previous_hash == blockchain.chain[index - 1].hash):
+            #    blockchain.append_block(blockToAdd)
+            #print("Machine ID: ", blockchain.chain[index].machine_id)
+            #print("Time: ", blockchain.chain[index].timestamp)
+            #print("Ballot: ", blockchain.chain[index].data)
+            #print("Current Hash: ", blockchain.chain[index].hash)
+            #print("Previous Hash: ", blockchain.chain[index].previous_hash, "\n")
+            #pickledBlock = pickle.dumps(blockToAdd)
+            outgoing_command_handler('ADDB', message)
 
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------- Loop to take in votes, then request to update the blockchain ---------------------------------#
