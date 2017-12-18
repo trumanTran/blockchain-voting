@@ -16,9 +16,9 @@ import queue
 import blockchain
 import csv
 try:
-	import cPickle as pickle
+    import cPickle as pickle
 except:
-	import pickle
+    import pickle
 
 # ----------------------------------------------------------------------------------------------------------------------#
 # ----------------------------- These identifiers will be hard coded onto each machine ---------------------------------#
