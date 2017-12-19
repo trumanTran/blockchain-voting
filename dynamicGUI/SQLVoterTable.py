@@ -52,6 +52,7 @@ def check_voter(target_name, target_address):
 		'''Insert vote message passing thing here.'''
 		cur.execute('UPDATE voter_reg SET hasvoted = 1 WHERE name=? AND address=?',
 					(target_name, target_address))  # Execute bool change.
+		con.commit()
 		return True;
 	elif(bool_val == (1,)):
 		# They voted already.
@@ -61,3 +62,9 @@ def check_voter(target_name, target_address):
 		# No hits on list, suspicious...
 		tkinter.messagebox.showinfo("NOTICE", "Your name and/or address are not on the list.")
 		return False;
+
+def ping_voter(target_name, target_address):
+	#Function that is called by receive when it receives a 'VOTE' command.
+	#Removes voter from being eligible.
+	cur.execute('UPDATE voter_reg SET hasvoted = 1 WHERE name=? AND address=?', (target_name, target_address))
+	con.commit()
